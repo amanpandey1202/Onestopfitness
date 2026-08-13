@@ -1,0 +1,10 @@
+import { getPublishedCompetitions } from "@/lib/services/public";
+import { fail, ok } from "@/lib/api";
+
+export async function GET() {
+  try {
+    return ok({ competitions: await getPublishedCompetitions() });
+  } catch (error) {
+    return fail(error);
+  }
+}

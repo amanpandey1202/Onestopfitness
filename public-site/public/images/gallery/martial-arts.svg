@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b1b1b"/>
+      <stop offset="1" stop-color="#0b0b0b"/>
+    </linearGradient>
+    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b6ff2e"/>
+      <stop offset="1" stop-color="#6f9c00"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <rect x="40" y="40" width="720" height="520" rx="24" fill="none" stroke="url(#lime)" stroke-width="3" opacity="0.4"/>
+  <rect x="325" y="200" width="150" height="170" rx="18" fill="#1b1b1b" stroke="url(#lime)" stroke-width="7"/>
+  <circle cx="400" cy="285" r="42" fill="none" stroke="url(#lime)" stroke-width="7"/>
+  <text x="400" y="415" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#ffffff" text-anchor="middle" letter-spacing="5">MARTIAL ARTS</text>
+  <text x="400" y="448" font-family="Arial, sans-serif" font-size="15" fill="#9ca3af" text-anchor="middle">ONE STOP FITNESS</text>
+  <text x="400" y="535" font-family="Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="middle">Placeholder photo — replace in /public/images/gallery/</text>
+</svg>

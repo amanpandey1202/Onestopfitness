@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b1b1b"/>
+      <stop offset="1" stop-color="#0b0b0b"/>
+    </linearGradient>
+    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b6ff2e"/>
+      <stop offset="1" stop-color="#6f9c00"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bg)"/>
+  <circle cx="300" cy="300" r="250" fill="none" stroke="url(#lime)" stroke-width="3" opacity="0.35"/>
+  <g fill="url(#lime)" opacity="0.92">
+    <circle cx="300" cy="215" r="75"/>
+    <path d="M300 320 C 190 320 160 460 160 540 L440 540 C440 460 410 320 300 320 Z"/>
+  </g>
+  <text x="300" y="560" font-family="Arial, sans-serif" font-size="30" font-weight="bold" fill="#ffffff" text-anchor="middle" letter-spacing="3">RAJAN SINGH</text>
+  <text x="300" y="590" font-family="Arial, sans-serif" font-size="15" fill="#9ca3af" text-anchor="middle">Placeholder — add Rajan's photo</text>
+</svg>
