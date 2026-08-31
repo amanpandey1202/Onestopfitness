@@ -135,7 +135,39 @@ npx tsx -e "import { syncMemberToAirtable } from './lib/airtable'; await syncMem
 
 ---
 
-## 7. Env var checklist (final)
+## 7. Emails: password reset / verification — need your own domain (Resend)
+
+**Already built in ✅** — the app sends welcome, expiry-reminder, password-reset
+and email-verification emails. But live **delivery to members is blocked until
+you own a verified domain** for sending.
+
+### Status (Aug 2026)
+- `RESEND_API_KEY` is set in `.env` (a send-only key — confirmed working ✓).
+- Test send succeeded **only to `fgamers857@gmail.com`** (the Resend account's
+  own inbox) because no domain is verified yet.
+- Resend's free/test mode only delivers to the account owner's own address.
+  Delivery to any *other* address (members, or `amanpandey8162@gmail.com`)
+  returns `403 — domain not verified` until you finish the steps below.
+
+### When you buy the domain / plan — do this
+1. On your Domain provider (where you bought `onestopfit.in`), keep the DNS
+   panel handy — you'll paste records there.
+2. Go to **https://resend.com/domains** → **Add Domain** → enter `onestopfit.in`.
+3. Resend shows 3 DNS records (SPF, DKIM + one verification record). Copy them
+   into your domain's DNS settings at the domain provider.
+4. Return to Resend → click **Verify**. Wait for status **Verified**.
+5. Tell me — I'll re-run the test send to `amanpandey8162@gmail.com` and confirm.
+
+### Also remember when going live
+- `EMAIL_FROM` in `.env` is `ONE STOP FITNESS <noreply@onestopfit.in>` — uses the
+  verified domain, so leave it.
+- `NEXT_PUBLIC_SITE_URL` must be your **real live URL** (e.g.
+  `https://onestopfit.in`), **not** `http://localhost:3000` — otherwise the
+  reset/verification links in emails point to your laptop.
+
+---
+
+## 8. Env var checklist (final)
 
 ```
 DATABASE_URL          → Supabase Postgres URI
@@ -147,15 +179,19 @@ STORAGE_BUCKET        → "uploads"
 AIRTABLE_TOKEN        → pat...
 AIRTABLE_BASE_ID      → app...
 AIRTABLE_TABLE_ID     → tbl...
+RESEND_API_KEY        → re_... (already set ✓)
+EMAIL_FROM            → ONE STOP FITNESS <noreply@onestopfit.in>
 ```
 
 ---
 
-## 8. Go-live checklist
+## 9. Go-live checklist
 
 - [ ] Database on Supabase, `prisma db push` + `seed` run against it
 - [ ] Admin can log in on the live site (change the default password first)
 - [ ] Upload a banner + one photo in admin → shows on homepage
 - [ ] Assign a test membership → row appears in Airtable
 - [ ] `NEXT_PUBLIC_SITE_URL` set correctly (WhatsApp links, OG image)
+- [ ] Verify `onestopfit.in` at **resend.com/domains** (see §7) so member emails deliver
+- [ ] Send a test password-reset email to a real inbox and confirm it lands
 - [ ] Backup `prisma/dev.db` saved somewhere safe

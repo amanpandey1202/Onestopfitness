@@ -2,13 +2,16 @@ import Image from "next/image";
 import Link from "next/link";
 import SectionHeadingFrontend from "@/components-frontend/SectionHeading.frontend";
 import PricingCardFrontend from "@/components-frontend/PricingCard.frontend";
-import GalleryCarousel from "@/components/GalleryCarousel";
+import GalleryExperience from "@/components/GalleryExperience";
 import WhatsAppButtonFrontend from "@/components-frontend/WhatsAppButton.frontend";
 import NewsSlideshow from "@/components/NewsSlideshow";
 import Reveal from "@/components/Reveal";
 import TestimonialCarouselFrontend from "@/components-frontend/TestimonialCarousel.frontend";
 import MarqueeFrontend from "@/components-frontend/Marquee.frontend";
 import Icon, { type IconName } from "@/components-frontend/Icons.frontend";
+import CountUp from "@/components/CountUp";
+import Parallax from "@/components/Parallax";
+import ScrollZoom from "@/components/ScrollZoom";
 import { services } from "@/data/services";
 import { site } from "@/data/site";
 import { formatDate } from "@/lib/format";
@@ -27,10 +30,10 @@ import {
 export const revalidate = 15;
 
 const stats = [
-  { value: "Since 2002", label: "Serving Lucknow" },
-  { value: "5+", label: "Programs & Classes" },
-  { value: "5", label: "Fitness Titles" },
-  { value: "6 Days", label: "Open Every Week" },
+  { prefix: "Since ", to: 2002, suffix: "", label: "Serving Lucknow" },
+  { prefix: "", to: 5, suffix: "+", label: "Programs & Classes" },
+  { prefix: "", to: 5, suffix: "", label: "Fitness Titles" },
+  { prefix: "", to: 6, suffix: " Days", label: "Open Every Week" },
 ];
 
 const reasons: { icon: IconName; title: string; text: string }[] = [
@@ -88,15 +91,19 @@ export default async function FrontendHomePage() {
     <>
       {/* ============================= HERO ============================= */}
       <section className="noise relative overflow-hidden">
-        {/* ambient lime orbs */}
-        <div
-          className="orb"
-          style={{ background: "rgba(154,217,1,0.35)", width: 420, height: 420, top: "-8%", right: "-6%" }}
-        />
-        <div
-          className="orb"
-          style={{ background: "rgba(154,217,1,0.22)", width: 340, height: 340, bottom: "-10%", left: "-6%", animationDelay: "-5s" }}
-        />
+        <div className="bg-grid" />
+        <Parallax className="pointer-events-none absolute inset-0" speed={0.14}>
+          <div
+            className="orb"
+            style={{ background: "rgba(154,217,1,0.35)", width: 420, height: 420, top: "-8%", right: "-6%" }}
+          />
+        </Parallax>
+        <Parallax className="pointer-events-none absolute inset-0" speed={0.1}>
+          <div
+            className="orb"
+            style={{ background: "rgba(154,217,1,0.22)", width: 340, height: 340, bottom: "-10%", left: "-6%", animationDelay: "-5s" }}
+          />
+        </Parallax>
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -109,15 +116,15 @@ export default async function FrontendHomePage() {
           /* Poster mode — banner image beside the headline */
           <div className="relative z-10 mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pt-20 lg:pt-24">
             <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
-              <div className="reveal text-center lg:text-left">
+              <div className="r-enter text-center lg:text-left">
                 <p className="kicker mx-auto justify-center lg:mx-0 lg:justify-start">
                   Lucknow&apos;s Premium Fitness Center
                 </p>
                 <h1 className="font-anton mt-6 uppercase leading-[0.9] text-white">
-                  <span className="block text-[clamp(3rem,8vw,6.2rem)]">
+                  <span className="hero-word block text-[clamp(3rem,8vw,6.2rem)]" style={{ animationDelay: "0.05s" }}>
                     {banner.title?.split(" ").slice(0, -1).join(" ") ?? "BE YOUR"}
                   </span>
-                  <span className="glow-lime block text-[clamp(3rem,8vw,6.2rem)]">
+                  <span className="hero-word glow-lime hero-glow block text-[clamp(3rem,8vw,6.2rem)]" style={{ animationDelay: "0.22s" }}>
                     {banner.title?.split(" ").slice(-1)[0] ?? "BEST"}
                   </span>
                 </h1>
@@ -142,7 +149,7 @@ export default async function FrontendHomePage() {
                 </p>
               </div>
 
-              <div className="reveal reveal-1 relative mx-auto w-full max-w-md">
+              <div className="r-enter-1 relative mx-auto w-full max-w-md">
                 <div className="hero-frame aspect-[4/5]">
                   {/* next/image resizes the poster to viewport width and serves
                       compressed WebP instead of the raw multi-MB PNG. */}
@@ -182,8 +189,8 @@ export default async function FrontendHomePage() {
           <div className="relative z-10 mx-auto max-w-5xl px-4 pb-16 pt-20 text-center sm:px-6 sm:pt-28">
             <p className="kicker kicker-center mx-auto">Lucknow&apos;s Premium Fitness Center</p>
             <h1 className="font-anton mt-6 uppercase leading-[0.88] text-white">
-              <span className="block text-[clamp(3.4rem,11vw,8rem)]">BE YOUR</span>
-              <span className="glow-lime block text-[clamp(3.4rem,11vw,8rem)]">BEST</span>
+              <span className="hero-word block text-[clamp(3.4rem,11vw,8rem)]" style={{ animationDelay: "0.05s" }}>BE YOUR</span>
+              <span className="hero-word glow-lime hero-glow block text-[clamp(3.4rem,11vw,8rem)]" style={{ animationDelay: "0.22s" }}>BEST</span>
             </h1>
             <p className="mx-auto mt-7 max-w-xl text-white/65">
               {banner?.subtitle ??
@@ -280,7 +287,9 @@ export default async function FrontendHomePage() {
           {stats.map((stat, i) => (
             <Reveal key={stat.label} delay={i * 90}>
               <div className="text-center">
-                <p className="stat-num text-4xl uppercase sm:text-5xl">{stat.value}</p>
+                <p className="stat-num text-4xl uppercase sm:text-5xl">
+                  <CountUp prefix={stat.prefix} to={stat.to} suffix={stat.suffix} />
+                </p>
                 <p className="mt-2 text-xs uppercase tracking-[0.2em] text-white/45">
                   {stat.label}
                 </p>
@@ -451,7 +460,7 @@ export default async function FrontendHomePage() {
               subtitle="Take a look around before you step in."
             />
             <div className="mt-12">
-              <GalleryCarousel items={gallery} />
+              <GalleryExperience items={gallery} />
             </div>
             <div className="mt-12 text-center">
               <Link
@@ -469,16 +478,18 @@ export default async function FrontendHomePage() {
       {/* ============================ FOUNDER ============================ */}
       <section className="section mx-auto max-w-7xl">
         <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div className="reveal relative mx-auto w-full max-w-sm">
+          <div className="r-enter-2 relative mx-auto w-full max-w-sm">
             <div className="hero-frame aspect-square">
               {founder?.profileImageUrl ? (
-                <Image
-                  src={founder.profileImageUrl}
-                  alt={`Founder of ${site.name}`}
-                  fill
-                  sizes="(min-width:1024px) 33vw, 100vw"
-                  className="object-cover"
-                />
+                <ScrollZoom className="absolute inset-0">
+                  <Image
+                    src={founder.profileImageUrl}
+                    alt={`Founder of ${site.name}`}
+                    fill
+                    sizes="(min-width:1024px) 33vw, 100vw"
+                    className="object-cover"
+                  />
+                </ScrollZoom>
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-gym-lime/10 font-anton text-8xl text-gym-lime">
                   {(founder?.name ?? "D").charAt(0)}
@@ -486,7 +497,7 @@ export default async function FrontendHomePage() {
               )}
             </div>
           </div>
-          <div className="reveal reveal-1">
+          <div className="r-enter-3">
             <p className="kicker">Meet the Founder</p>
             <h2 className="font-anton mt-5 text-5xl uppercase leading-[0.9] text-white">
               {founder?.name ?? "Deepak"}

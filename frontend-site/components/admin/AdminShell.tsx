@@ -32,10 +32,19 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        if (r.status === 401) {
+          // Session expired while the cookie-less guard let us through —
+          // bounce to the admin login instead of showing a broken page.
+          router.replace("/admin/login");
+          router.refresh();
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
       .then(setMe)
       .catch(() => {});
-  }, []);
+  }, [router]);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -141,7 +150,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             </button>
           </div>
         </header>
-        <main className="flex-1 px-6 py-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6 md:py-8">{children}</main>
       </div>
     </div>
   );

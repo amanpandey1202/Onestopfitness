@@ -64,17 +64,62 @@
 }
 
 /* Scroll-reveal: fade + rise as sections enter the viewport */
-.reveal {
+.reveal,
+.reveal-left,
+.reveal-right,
+.reveal-zoom,
+.reveal-blur {
   opacity: 0;
-  transform: translateY(26px);
   transition:
-    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
+    opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform, filter;
+}
+.reveal {
+  transform: translateY(26px);
+}
+.reveal-left {
+  transform: translateX(-32px);
+}
+.reveal-right {
+  transform: translateX(32px);
+}
+.reveal-zoom {
+  transform: scale(0.94);
+}
+.reveal-blur {
+  transform: translateY(18px);
+  filter: blur(8px);
 }
 .reveal-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateX(0) translateY(0) scale(1);
+  filter: none;
+}
+
+/* Entry animation for static (non-scroll) elements — hero on load */
+@keyframes r-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.r-enter {
+  animation: r-enter 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.r-enter-1 {
+  animation: r-enter 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+.r-enter-2 {
+  animation: r-enter 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
+}
+.r-enter-3 {
+  animation: r-enter 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.36s both;
 }
 
 /* Card lift on hover — subtle rise + lime glow */
@@ -392,39 +437,557 @@ body {
   text-shadow: 0 0 26px rgba(154, 217, 1, 0.4);
 }
 
-/* Entrance reveal */
-.reveal {
-  animation: reveal-up 0.7s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+/* Section vertical rhythm */
+.section {
+  padding: clamp(4rem, 8vw, 7rem) 1rem;
 }
-@keyframes reveal-up {
+
+/* ============================================================
+   GALLERY EXPERIENCE — animated stage, cine-reel, lightbox
+   ============================================================ */
+
+/* Ken Burns drift loops — continuous zoom / pan cycling */
+@keyframes gx-zoom-a {
+  0% {
+    transform: scale(1.02) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.18) translate(-1.8%, -1.2%);
+  }
+  100% {
+    transform: scale(1.02) translate(0, 0);
+  }
+}
+@keyframes gx-zoom-b {
+  0% {
+    transform: scale(1.2) translate(1.6%, 1.2%);
+  }
+  50% {
+    transform: scale(1.04) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.2) translate(1.6%, 1.2%);
+  }
+}
+.gx-zoom-a {
+  animation: gx-zoom-a 16s ease-in-out infinite;
+  will-change: transform;
+}
+.gx-zoom-b {
+  animation: gx-zoom-b 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Slide entrance — blur-to-sharp reveal per image */
+@keyframes gx-in {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: scale(1.06);
+    filter: blur(14px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+.gx-in {
+  animation: gx-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Diagonal lime light sweep across the stage */
+@keyframes gx-sweep {
+  0% {
+    transform: translateX(-180%) skewX(-14deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(360%) skewX(-14deg);
+    opacity: 0;
+  }
+}
+.gx-sweep {
+  position: absolute;
+  top: -45%;
+  bottom: -45%;
+  width: 32%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(154, 217, 1, 0.2) 42%,
+    rgba(255, 255, 255, 0.32) 50%,
+    rgba(154, 217, 1, 0.2) 58%,
+    transparent 100%
+  );
+  animation: gx-sweep 5s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Pulsing energy scanlines */
+@keyframes gx-scan {
+  0% {
+    background-position: 0 0;
+    opacity: 0.35;
+  }
+  50% {
+    background-position: 0 26px;
+    opacity: 0.85;
+  }
+  100% {
+    background-position: 0 0;
+    opacity: 0.35;
+  }
+}
+.gx-scan {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(154, 217, 1, 0.06) 0 2px,
+    transparent 2px 13px
+  );
+  animation: gx-scan 7s linear infinite;
+}
+
+/* Progress bar: fills toward next auto-advance */
+@keyframes gx-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+.gx-progress {
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--color-gym-lime);
+  box-shadow: 0 0 12px rgba(154, 217, 1, 0.7);
+  animation: gx-progress linear both;
+}
+
+/* Shockwave ring spawned on every slide change */
+@keyframes gx-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+.gx-ring {
+  position: absolute;
+  border-radius: 9999px;
+  border: 2px solid rgba(154, 217, 1, 0.85);
+  box-shadow: 0 0 26px rgba(154, 217, 1, 0.55);
+  animation: gx-ring 0.9s ease-out both;
+  pointer-events: none;
+}
+
+/* Caption words rise one-by-one */
+@keyframes gx-word {
+  from {
+    opacity: 0;
+    transform: translateY(110%);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-.reveal-1 {
-  animation-delay: 0.08s;
+.gx-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
 }
-.reveal-2 {
-  animation-delay: 0.16s;
-}
-.reveal-3 {
-  animation-delay: 0.24s;
+.gx-word > span {
+  display: inline-block;
+  animation: gx-word 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Section vertical rhythm */
-.section {
-  padding: clamp(4rem, 8vw, 7rem) 1rem;
+/* Kicker label slide + blink dot */
+@keyframes gx-kicker {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.gx-kicker {
+  animation: gx-kicker 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Cine-reel infinite loop — duplicate track translates -50% forever */
+@keyframes gx-reel {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.gx-reel-track {
+  display: flex;
+  gap: 0.75rem;
+  width: max-content;
+  animation: gx-reel 46s linear infinite;
+  will-change: transform;
+}
+.gx-reel-wrap:hover .gx-reel-track {
+  animation-play-state: paused;
+}
+
+/* Floating spotlight dust */
+@keyframes gx-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.12;
+  }
+  50% {
+    transform: translate3d(12px, -20px, 0);
+    opacity: 0.55;
+  }
+}
+.gx-dust {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--color-gym-lime);
+  box-shadow: 0 0 12px rgba(154, 217, 1, 0.9);
+  animation: gx-float 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Moody gradient on the stage */
+.gx-vignette {
+  background:
+    radial-gradient(
+      120% 90% at 50% 10%,
+      transparent 40%,
+      rgba(5, 5, 5, 0.55) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(10, 10, 10, 0.25),
+      transparent 30%,
+      transparent 62%,
+      rgba(10, 10, 10, 0.82)
+    );
+}
+
+/* Lightbox zoom-in */
+@keyframes gx-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.gx-lightbox {
+  animation: gx-zoom 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Energy meter needle swing */
+@keyframes gx-needle {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* ============================================================
+   PREMIUM MOTION — scroll progress, press feedback, shine,
+   ambient grid, scroll-zoom (phone-first, GPU-only)
+   ============================================================ */
+
+/* Tactile press feedback — desktop only so touches don't stick */
+@media (hover: hover) {
+  .btn:active,
+  .panel:active,
+  .card-lift:active,
+  .nav-link:active {
+    transform: translateY(0) scale(0.97) !important;
+  }
+  .btn-primary:active {
+    box-shadow: 0 0 18px rgba(154, 217, 1, 0.3) !important;
+  }
+}
+a:active,
+button:active,
+.btn:active,
+.panel:active {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Focus ring so keyboards/taps always show state */
+:focus-visible {
+  outline: 2px solid var(--color-gym-lime);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Primary button shine sweep on hover */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -80%;
+  width: 55%;
+  background: linear-gradient(
+    105deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: skewX(-18deg);
+  transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .btn-primary:hover::after {
+    left: 125%;
+  }
+}
+
+/* Featured pricing card slow glow pulse loop */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(154, 217, 1, 0.14),
+      0 0 26px rgba(154, 217, 1, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(154, 217, 1, 0.35),
+      0 0 52px rgba(154, 217, 1, 0.28);
+  }
+}
+.glow-pulse {
+  animation: glow-pulse 3.2s ease-in-out infinite;
+}
+
+/* Ambient drifting lime grid backdrop */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(154, 217, 1, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(154, 217, 1, 0.06) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 90% 80% at 50% 40%,
+    #000 30%,
+    transparent 78%
+  );
+  mask-image: radial-gradient(
+    ellipse 90% 80% at 50% 40%,
+    #000 30%,
+    transparent 78%
+  );
+  animation: grid-drift 26s linear infinite;
+}
+@keyframes grid-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 46px;
+  }
+}
+
+/* Scroll-driven Ken Burns: image settles 1.15 -> 1.0 in view */
+.scroll-zoom {
+  transform: scale(1.15);
+  transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.scroll-zoom.is-inview {
+  transform: scale(1);
+}
+
+/* Hero title word entrance (blur-up) */
+@keyframes hero-word {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+    filter: blur(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.hero-word {
+  animation: hero-word 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Hero title continuous glow pulse */
+@keyframes hero-glow {
+  0%,
+  100% {
+    text-shadow: 0 0 18px rgba(154, 217, 1, 0.45),
+      0 0 48px rgba(154, 217, 1, 0.28);
+  }
+  50% {
+    text-shadow: 0 0 30px rgba(154, 217, 1, 0.75),
+      0 0 80px rgba(154, 217, 1, 0.4);
+  }
+}
+.hero-glow {
+  animation: hero-glow 5s ease-in-out infinite;
+}
+
+/* Back-to-top / scroll progress entrance */
+@keyframes float-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.float-in-up {
+  animation: float-in-up 0.4s ease both;
+}
+
+/* Animated section heading: word cascade */
+@keyframes word-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.word-rise > span {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+.word-rise > span > span {
+  display: inline-block;
+  animation: word-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Count-up / result underline sweep */
+@keyframes sweep-underline {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.sweep-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 2px;
+  width: 100%;
+  border-radius: 9999px;
+  background: var(--color-gym-lime);
+  box-shadow: 0 0 10px rgba(154, 217, 1, 0.7);
+  transform-origin: left;
+  animation: sweep-underline 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* WhatsApp ring pulse */
+@keyframes wa-ring {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+.wa-ring {
+  animation: wa-ring 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+/* FAQ smooth expand: 0fr -> 1fr */
+.faq-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.faq-grid-open {
+  grid-template-rows: 1fr;
+}
+.faq-grid > div {
+  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .marquee-track,
   .orb,
-  .reveal {
-    animation: none;
+  .reveal,
+  .reveal-left,
+  .reveal-right,
+  .reveal-zoom,
+  .reveal-blur,
+  .r-enter,
+  .r-enter-1,
+  .r-enter-2,
+  .r-enter-3,
+  .gx-zoom-a,
+  .gx-zoom-b,
+  .gx-sweep,
+  .gx-scan,
+  .gx-progress,
+  .gx-reel-track,
+  .gx-dust,
+  .gx-word > span,
+  .gx-ring,
+  .hero-word,
+  .hero-glow,
+  .glow-pulse,
+  .bg-grid,
+  .word-rise > span > span,
+  .wa-ring,
+  .float-in-up {
+    animation: none !important;
+  }
+  .reveal,
+  .reveal-visible,
+  .reveal-left,
+  .reveal-right,
+  .reveal-zoom,
+  .reveal-blur {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .scroll-zoom {
+    transform: none !important;
+  }
+  .faq-grid {
+    transition: none;
   }
 }

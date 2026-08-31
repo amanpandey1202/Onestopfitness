@@ -11,10 +11,19 @@ export default function TrainerShell({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        if (r.status === 401) {
+          // Session expired while the cookie-less guard let us through —
+          // bounce to login instead of showing a broken dashboard.
+          router.replace("/login");
+          router.refresh();
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
       .then(setMe)
       .catch(() => {});
-  }, []);
+  }, [router]);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });

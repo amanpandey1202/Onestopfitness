@@ -39,7 +39,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, phone: form.phone || null, fitnessGoal: form.fitnessGoal }),
+        body: JSON.stringify({ ...form, fitnessGoal: form.fitnessGoal }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
@@ -83,9 +83,11 @@ export default function RegisterPage() {
             onChange={(e) => set("email", e.target.value)}
           />
         </Field>
-        <Field label="Phone (optional)">
+        <Field label="Phone" hint="Required — used for checkout/WhatsApp contact.">
           <Input
+            required
             type="tel"
+            autoComplete="tel"
             placeholder="+91 …"
             value={form.phone}
             onChange={(e) => set("phone", e.target.value)}

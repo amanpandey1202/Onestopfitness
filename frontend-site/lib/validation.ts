@@ -19,16 +19,50 @@ const optionalString = z
 // Auth
 // ---------------------------------------------------------------------------
 
+/**
+ * Password policy for new accounts / resets. Requires a reasonable password:
+ * 8+ chars with at least one letter, one number, and one special char.
+ * (Existing accounts are not force-affected.)
+ */
+export const passwordSchema = z
+  .string()
+  .min(8, { message: "Password must be at least 8 characters." })
+  .max(128)
+  .refine((p) => /[A-Za-z]/.test(p), { message: "Password must contain a letter." })
+  .refine((p) => /\d/.test(p), { message: "Password must contain a number." })
+  .refine((p) => /[^A-Za-z0-9]/.test(p), { message: "Password must contain a special character." });
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
 
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, { message: "Current password is required." }),
+  newPassword: passwordSchema,
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: passwordSchema,
+});
+
 export const registerSchema = z.object({
   name: z.string().min(2).max(80),
   email: z.string().email(),
-  phone: optionalString,
-  password: z.string().min(8).max(128),
+  // Phone is mandatory for public signups (needed for WhatsApp contact).
+  phone: z
+    .string()
+    .min(10, { message: "Enter a valid phone number." })
+    .max(15)
+    .refine((p) => /\d{10,15}/.test(p.replace(/[\s-]/g, "")), {
+      message: "Enter a valid phone number.",
+    }),
+  password: passwordSchema,
   fitnessGoal: optionalString,
 });
 
@@ -53,7 +87,7 @@ export const memberCreateSchema = z.object({
   name: z.string().min(2).max(80),
   email: z.string().email(),
   phone: optionalString,
-  password: z.string().min(8).max(128),
+  password: passwordSchema,
   fitnessGoal: optionalString,
   planId: optionalString,
   notes: optionalString,
@@ -87,11 +121,12 @@ export const trainerCreateSchema = z.object({
   name: z.string().min(2).max(80),
   email: z.string().email(),
   phone: optionalString,
-  password: z.string().min(8).max(128),
+  password: passwordSchema,
   specialization: z.string().min(2).max(120),
   bio: optionalString,
   experience: z.number().int().min(0).max(100).optional(),
   instagram: optionalString,
+  profileImageUrl: optionalString,
   founderNote: optionalString,
   founderTitles: z.array(z.string()).optional(),
   isFounder: z.boolean().optional(),
@@ -245,4 +280,17 @@ export const announcementUpdateSchema = z.object({
   imageUrl: optionalString,
   expiresAt: optionalDate,
   isPublished: optionalBool,
+});
+
+export const classUpdateSchema = z.object({
+  name: z.string().min(2).max(80).optional(),
+  description: optionalString,
+  trainerId: optionalString,
+  dayOfWeek: z.number().int().min(0).max(6).optional(),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  durationMins: z.number().int().min(15).max(300).optional(),
+  maxCapacity: z.number().int().min(1).max(500).optional(),
+  location: optionalString,
+  isActive: z.boolean().optional(),
 });

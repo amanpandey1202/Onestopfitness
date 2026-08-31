@@ -31,6 +31,7 @@ export default function PublicPayLandingPage({
   const router = useRouter();
 
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   const [offer, setOffer] = useState<Offer | null>(null);
   const [member, setMember] = useState<{ id: string; name: string; email: string } | null>(null);
   const [lookupEmail, setLookupEmail] = useState("");
@@ -52,7 +53,16 @@ export default function PublicPayLandingPage({
       fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)),
     ])
       .then(([plansData, offersData, meData]) => {
-        setPlans(plansData.plans ?? []);
+        const loadedPlans = plansData.plans ?? [];
+        setPlans(loadedPlans);
+        
+        // Auto select plan from URL or select first by default
+        if (params.planId) {
+          setSelectedPlanId(params.planId);
+        } else if (loadedPlans.length > 0) {
+          setSelectedPlanId(loadedPlans[0].id);
+        }
+
         if (offersData?.offers && params.offerId) {
           const found = offersData.offers.find((o: Offer) => o.id === params.offerId);
           if (found) setOffer(found);
@@ -63,13 +73,12 @@ export default function PublicPayLandingPage({
       })
       .catch(() => setError("Failed to load payment options."))
       .finally(() => setLoading(false));
-  }, [params.offerId]);
+  }, [params.offerId, params.planId]);
 
   async function handlePay(planId: string) {
     let effectiveMemberId = member?.id || params.memberId;
 
     if (!effectiveMemberId && lookupEmail.trim()) {
-      // Look up member by email or phone
       try {
         const lookupRes = await fetch(`/api/public/lookup-member?query=${encodeURIComponent(lookupEmail.trim())}`);
         const lookupData = await lookupRes.json();
@@ -80,7 +89,6 @@ export default function PublicPayLandingPage({
     }
 
     if (!effectiveMemberId) {
-      // Redirect to login with return URL
       router.push(`/login?next=${encodeURIComponent(`/pay?planId=${planId}${params.offerId ? `&offerId=${params.offerId}` : ""}`)}`);
       return;
     }
@@ -112,7 +120,6 @@ export default function PublicPayLandingPage({
         return;
       }
 
-      // Launch Razorpay
       if (!window.Razorpay) {
         await new Promise<void>((resolve, reject) => {
           const s = document.createElement("script");
@@ -163,7 +170,6 @@ export default function PublicPayLandingPage({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: testOrderData.orderId,
-          isTestMode: true,
         }),
       });
       const verifyData = await verifyRes.json();
@@ -177,102 +183,202 @@ export default function PublicPayLandingPage({
 
   if (loading) return <div className="flex justify-center py-24"><Spinner /></div>;
 
+  const selectedPlan = plans.find((p) => p.id === selectedPlanId);
+  const basePrice = selectedPlan ? selectedPlan.price : 0;
+  let finalPrice = basePrice;
+  let discountAmount = 0;
+
+  if (selectedPlan && offer) {
+    if (offer.discountType === "PERCENT" && offer.discountValue) {
+      discountAmount = Math.round((basePrice * offer.discountValue) / 100);
+      finalPrice = Math.max(1, basePrice - discountAmount);
+    } else if (offer.discountType === "AMOUNT" && offer.discountValue) {
+      discountAmount = offer.discountValue;
+      finalPrice = Math.max(1, basePrice - discountAmount);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gym-black text-white px-4 py-12">
-      <div className="mx-auto max-w-4xl space-y-8">
+    <div className="min-h-screen bg-gym-black text-white px-4 py-8 md:py-16">
+      <div className="mx-auto max-w-4xl space-y-6 md:space-y-8">
+        
+        {/* Header */}
         <div className="text-center">
-          <Link href="/" className="font-anton text-2xl uppercase tracking-wider text-white">
+          <Link href="/" className="font-anton text-2xl uppercase tracking-wider text-white hover:text-gym-lime transition">
             ONE STOP <span className="text-gym-lime">FITNESS</span>
           </Link>
-          <h1 className="mt-4 font-display text-3xl font-bold uppercase tracking-wide">
-            Membership Checkout
+          <h1 className="mt-4 font-display text-2xl md:text-3xl font-bold uppercase tracking-wide">
+            Checkout Portal
           </h1>
-          <p className="mt-1 text-sm text-white/50">
-            {member ? `Logged in as ${member.name} (${member.email})` : "Enter your email/phone or log in to complete your checkout."}
+          <p className="mt-1.5 text-xs md:text-sm text-white/50">
+            {member ? `Account: ${member.name} (${member.email})` : "Link your phone/email or login below to complete checkout."}
           </p>
         </div>
 
-        {!member && !params.memberId && (
-          <Card className="p-5 max-w-md mx-auto space-y-3">
-            <label className="block text-xs font-semibold uppercase text-white/70">
-              Member Email or Phone
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="e.g. member@onestopfit.in or 9876543210"
-                value={lookupEmail}
-                onChange={(e) => setLookupEmail(e.target.value)}
-                className="flex-1 rounded-lg border border-white/15 bg-gym-ink px-3 py-2 text-sm text-white placeholder-white/40 focus:border-gym-lime focus:outline-none"
-              />
-              <Button onClick={() => router.push("/login?next=/pay")}>
-                Log In
-              </Button>
-            </div>
-            <p className="text-[11px] text-white/40">
-              Entering your registered email/phone links your payment to your profile instantly.
-            </p>
-          </Card>
-        )}
-
-        {offer && (
-          <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-5 text-center space-y-1">
-            <Badge tone="yellow">Special Discount Offer</Badge>
-            <h2 className="font-display text-xl font-bold text-white">{offer.title}</h2>
-            {offer.description && <p className="text-xs text-white/70">{offer.description}</p>}
-          </div>
-        )}
-
         {error && (
-          <div className="rounded-lg border border-red-400/30 bg-red-500/10 p-4 text-center text-sm text-red-300">
-            {error}
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center text-sm text-red-400">
+            ⚠️ {error}
           </div>
         )}
 
-        {testOrderData && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-            <Card className="w-full max-w-md p-6 space-y-5 border-gym-lime/40">
-              <div className="text-center">
-                <h2 className="font-display text-xl font-bold uppercase text-white">Demo Gateway</h2>
-                <p className="mt-1 text-xs text-white/50">Test mode simulation</p>
+        {/* Unified Checkout Block */}
+        <div className="grid gap-6 md:grid-cols-5 items-start">
+          
+          {/* Plan Selector & Identity Column */}
+          <div className="md:col-span-3 space-y-6">
+            
+            {/* Identity Lookup Card */}
+            {!member && !params.memberId && (
+              <Card className="p-4 md:p-6 space-y-4 border-white/5 bg-[#0d0d0d]">
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-white">1. Member Verification</h3>
+                  <p className="text-xs text-white/40 mt-0.5">Validate your membership account before paying.</p>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter registered email or phone"
+                      value={lookupEmail}
+                      onChange={(e) => setLookupEmail(e.target.value)}
+                      className="flex-1 rounded-lg border border-white/10 bg-[#121212] px-3 py-2.5 text-sm text-white placeholder-white/35 focus:border-gym-lime focus:outline-none"
+                    />
+                    <Button variant="secondary" onClick={() => router.push("/login?next=/pay")} className="sm:w-auto w-full">
+                      Log In instead
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-white/45 leading-relaxed">
+                    Connecting your profile ensures validity days are credited instantly to your specific member code.
+                  </p>
+                </div>
+              </Card>
+            )}
+
+            {/* Plan Selector Card */}
+            <Card className="p-4 md:p-6 space-y-4 border-white/5 bg-[#0d0d0d]">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+                  {member || params.memberId ? "1. Select Membership Plan" : "2. Select Membership Plan"}
+                </h3>
+                <p className="text-xs text-white/40 mt-0.5">Pick the package you wish to purchase or extend.</p>
               </div>
-              <div className="rounded-lg border border-white/10 p-4 text-sm flex justify-between font-bold">
+
+              <div className="space-y-3">
+                {plans.map((plan) => {
+                  const isSelected = plan.id === selectedPlanId;
+                  return (
+                    <label
+                      key={plan.id}
+                      className={`flex items-center justify-between p-4 rounded-xl border transition cursor-pointer select-none ${
+                        isSelected
+                          ? "border-gym-lime bg-gym-lime/5 shadow-[0_0_20px_rgba(154,217,1,0.06)]"
+                          : "border-white/10 bg-[#121212] hover:border-white/20"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          name="plan"
+                          checked={isSelected}
+                          onChange={() => setSelectedPlanId(plan.id)}
+                          className="accent-gym-lime h-4.5 w-4.5 cursor-pointer"
+                        />
+                        <div className="text-left">
+                          <span className="block text-sm font-bold text-white uppercase tracking-wider">{plan.name}</span>
+                          <span className="block text-xs text-white/45 mt-0.5">{plan.durationDays} Days Membership</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-extrabold text-gym-lime">
+                          ₹{plan.price.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </Card>
+          </div>
+
+          {/* Invoice Summary Block Column */}
+          <div className="md:col-span-2">
+            <Card className="p-4 md:p-6 border-white/5 bg-[#0d0d0d] space-y-6 sticky top-4">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-white">Checkout Summary</h3>
+                <p className="text-xs text-white/40 mt-0.5">Please review your billing details.</p>
+              </div>
+
+              {/* Offer Badge inside summary */}
+              {offer && (
+                <div className="rounded-lg border border-yellow-500/25 bg-yellow-500/5 p-3.5 space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-yellow-400">🏷️ Offer Applied</span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white">{offer.title}</h4>
+                </div>
+              )}
+
+              {/* Price Breakdown */}
+              <div className="space-y-3 text-xs md:text-sm border-t border-white/5 pt-4">
+                <div className="flex justify-between text-white/60">
+                  <span>Base Fare</span>
+                  <span>₹{basePrice.toLocaleString("en-IN")}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-yellow-400">
+                    <span>Discount</span>
+                    <span>-₹{discountAmount.toLocaleString("en-IN")}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-white/60">
+                  <span>Taxes & Platform Fees</span>
+                  <span className="text-emerald-400">FREE</span>
+                </div>
+                <div className="flex justify-between border-t border-white/5 pt-3 text-base font-extrabold text-white">
+                  <span>Total Amount</span>
+                  <span className="text-gym-lime">₹{finalPrice.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <Button
+                className="w-full py-3 font-semibold text-sm rounded-lg"
+                disabled={!!busy || !selectedPlanId}
+                onClick={() => handlePay(selectedPlanId)}
+              >
+                {busy ? "Connecting gateway..." : member || lookupEmail.trim() ? "Confirm & Pay Now" : "Register / Verify to Pay"}
+              </Button>
+
+              <div className="text-[10px] text-white/35 text-center leading-relaxed">
+                By processing, you agree to our membership terms. Payments are processed securely via encrypted channels.
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Test Mode Modal */}
+        {testOrderData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+            <Card className="w-full max-w-md p-6 space-y-5 border-gym-lime/40 bg-[#0d0d0d] shadow-[0_0_50px_rgba(154,217,1,0.15)]">
+              <div className="text-center space-y-1">
+                <h2 className="font-display text-xl font-bold uppercase text-white">Demo Payment Simulation</h2>
+                <p className="text-xs text-white/50">Simulated check for test keys</p>
+              </div>
+              <div className="rounded-lg border border-white/5 bg-[#121212] p-4 text-sm flex justify-between font-bold">
                 <span>{testOrderData.planName}</span>
                 <span className="text-gym-lime">₹{testOrderData.amount.toLocaleString("en-IN")}</span>
               </div>
-              <Button className="w-full" disabled={!!busy} onClick={confirmTestPayment}>
-                {busy === "test_confirm" ? "Processing…" : "Complete Payment Now"}
-              </Button>
+              <div className="flex gap-3">
+                <Button className="flex-1" disabled={!!busy} onClick={confirmTestPayment}>
+                  {busy === "test_confirm" ? "Processing…" : "Simulate Success"}
+                </Button>
+                <Button variant="secondary" onClick={() => setTestOrderData(null)}>
+                  Cancel
+                </Button>
+              </div>
             </Card>
           </div>
         )}
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => {
-            let finalPrice = plan.price;
-            if (offer) {
-              if (offer.discountType === "PERCENT" && offer.discountValue) {
-                finalPrice = Math.max(1, plan.price - Math.round((plan.price * offer.discountValue) / 100));
-              } else if (offer.discountType === "AMOUNT" && offer.discountValue) {
-                finalPrice = Math.max(1, plan.price - offer.discountValue);
-              }
-            }
-
-            return (
-              <Card key={plan.id} className="p-6 flex flex-col">
-                <div className="flex-1">
-                  <h2 className="font-display text-lg font-bold uppercase text-white">{plan.name}</h2>
-                  <p className="mt-3 font-display text-3xl font-bold text-gym-lime">
-                    ₹{finalPrice.toLocaleString("en-IN")}
-                  </p>
-                </div>
-                <Button className="mt-6 w-full" disabled={!!busy} onClick={() => handlePay(plan.id)}>
-                  {busy === plan.id ? "Processing…" : member || lookupEmail.trim() ? "Pay Now" : "Pay / Log In"}
-                </Button>
-              </Card>
-            );
-          })}
-        </div>
       </div>
     </div>
   );

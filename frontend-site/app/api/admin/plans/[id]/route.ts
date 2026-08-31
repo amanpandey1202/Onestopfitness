@@ -41,9 +41,15 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     const plan = await prisma.membershipPlan.findUnique({ where: { id } });
     if (!plan) return NextResponse.json({ error: "Plan not found" }, { status: 404 });
 
-    await prisma.membershipPlan.delete({ where: { id } });
-    await logAudit(admin.id, "DELETE_PLAN", "MembershipPlan", id, { name: plan.name });
-    return ok({ success: true });
+    // Soft-delete: a plan that has memberships/payments can't be hard-deleted
+    // (FK Restrict), and history must be preserved. Hiding it from the UI is
+    // the correct behaviour — same as classes.
+    const updated = await prisma.membershipPlan.update({
+      where: { id },
+      data: { isActive: false },
+    });
+    await logAudit(admin.id, "DELETE_PLAN", "MembershipPlan", id, { name: plan.name, deactivated: true });
+    return ok({ success: true, deactivated: !updated.isActive });
   } catch (error) {
     return fail(error);
   }

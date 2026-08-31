@@ -42,11 +42,13 @@ export default function FAQAccordionFrontend() {
                 <Icon name="plus" className="h-3.5 w-3.5" />
               </span>
             </button>
-            {isOpen && (
-              <p className="px-6 pb-6 text-sm leading-relaxed text-white/60">
-                {faq.answer}
-              </p>
-            )}
+            <div className={`faq-grid${isOpen ? " open" : ""}`}>
+              <div>
+                <p className="px-6 pb-6 text-sm leading-relaxed text-white/60">
+                  {faq.answer}
+                </p>
+              </div>
+            </div>
           </div>
         );
       })}

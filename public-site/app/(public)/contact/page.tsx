@@ -2,6 +2,7 @@ import SectionHeading from "@/components/SectionHeading";
 import BMICalculator from "@/components/BMICalculator";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import Icon, { type IconName } from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 import { site } from "@/data/site";
 
 export const metadata = {
@@ -56,33 +57,32 @@ export default function ContactPage() {
         />
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {infoCards.map((card) => (
-            <div
-              key={card.title}
-              className="rounded-2xl border border-white/10 bg-gym-ink p-6 shadow-card"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gym-lime/30 bg-gym-lime/10 text-gym-lime">
-                <Icon name={card.icon} className="h-6 w-6" />
+          {infoCards.map((card, i) => (
+            <Reveal key={card.title} delay={i * 80} className="h-full">
+              <div className="h-full rounded-2xl border border-white/10 bg-gym-ink p-6 shadow-card transition hover:-translate-y-1 hover:border-gym-lime/50 active:scale-[0.98]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gym-lime/30 bg-gym-lime/10 text-gym-lime">
+                  <Icon name={card.icon} className="h-6 w-6" />
+                </div>
+                <h3 className="mt-4 font-display text-lg font-bold uppercase tracking-wide text-gym-lime">
+                  {card.title}
+                </h3>
+                {card.lines.map((line) => (
+                  <p key={line} className="mt-1 text-sm text-white/70">
+                    {line}
+                  </p>
+                ))}
+                {card.href && (
+                  <a
+                    href={card.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-block text-sm font-bold text-white underline-offset-4 transition hover:text-gym-lime hover:underline"
+                  >
+                    {card.hrefLabel} →
+                  </a>
+                )}
               </div>
-              <h3 className="mt-4 font-display text-lg font-bold uppercase tracking-wide text-gym-lime">
-                {card.title}
-              </h3>
-              {card.lines.map((line) => (
-                <p key={line} className="mt-1 text-sm text-white/70">
-                  {line}
-                </p>
-              ))}
-              {card.href && (
-                <a
-                  href={card.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-block text-sm font-bold text-white underline-offset-4 transition hover:text-gym-lime hover:underline"
-                >
-                  {card.hrefLabel} →
-                </a>
-              )}
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -90,10 +90,11 @@ export default function ContactPage() {
       {/* MAP + BMI */}
       <section className="border-y border-white/10 bg-gym-ink">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 lg:grid-cols-2">
-          <div>
-            <h2 className="font-display text-2xl font-bold uppercase tracking-wide text-white">
-              Location <span className="text-gym-lime">Map</span>
-            </h2>
+          <Reveal>
+            <div>
+              <h2 className="font-display text-2xl font-bold uppercase tracking-wide text-white">
+                Location <span className="text-gym-lime">Map</span>
+              </h2>
             <p className="mt-2 text-sm text-white/55">
               Sheela Garden, Alamnagar, Rajajipuram — easy to reach, parking
               friendly.
@@ -113,23 +114,30 @@ export default function ContactPage() {
             <div className="mt-5">
               <WhatsAppButton label="Get Directions on WhatsApp" message={`Hi ${site.name}, please send me directions to your gym at ${site.address}.`} />
             </div>
-          </div>
+            </div>
+          </Reveal>
 
-          <BMICalculator />
+          <Reveal delay={120} className="h-full">
+            <BMICalculator />
+          </Reveal>
         </div>
       </section>
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 py-16 text-center">
-        <h2 className="font-display text-3xl font-bold uppercase tracking-wide text-white">
-          Have a <span className="text-gym-lime">Question?</span>
-        </h2>
-        <p className="mt-3 text-white/60">
-          Message us and we&apos;ll get back to you right away.
-        </p>
-        <div className="mt-6">
+        <Reveal>
+          <h2 className="font-display text-3xl font-bold uppercase tracking-wide text-white">
+            Have a <span className="text-gym-lime">Question?</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={140}>
+          <p className="mt-3 text-white/60">
+            Message us and we&apos;ll get back to you right away.
+          </p>
+        </Reveal>
+        <Reveal delay={260} className="mt-6">
           <WhatsAppButton label="Chat on WhatsApp" />
-        </div>
+        </Reveal>
       </section>
     </>
   );

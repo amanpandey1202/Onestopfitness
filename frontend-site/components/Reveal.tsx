@@ -1,52 +1,58 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef } from "react";
+import type { ElementType, ReactNode } from "react";
 
-/**
- * Wraps content in a scroll-triggered fade-up reveal. Children animate in
- * once when they enter the viewport; `delay` staggers grids and stacks.
- */
-export default function Reveal({
-  children,
-  className = "",
-  delay = 0,
-}: {
-  children: ReactNode;
-  className?: string;
+type Variant = "up" | "left" | "right" | "zoom" | "blur";
+
+const VARIANTS: Record<Variant, string> = {
+  up: "",
+  left: " reveal-left",
+  right: " reveal-right",
+  zoom: " reveal-zoom",
+  blur: " reveal-blur",
+};
+
+type RevealProps<T extends ElementType> = {
+  as?: T;
+  variant?: Variant;
   delay?: number;
-}) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [shown, setShown] = useState(false);
+  className?: string;
+  children: ReactNode;
+};
+
+export default function Reveal<T extends ElementType = "div">({
+  as,
+  variant = "up",
+  delay = 0,
+  className = "",
+  children,
+}: RevealProps<T>) {
+  const Tag = (as ?? "div") as ElementType;
+  const ref = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setShown(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
+    if (delay > 0) el.style.transitionDelay = `${delay}ms`;
+    const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setShown(true);
-            obs.disconnect();
+            el.classList.add("reveal-visible");
+            io.disconnect();
           }
         });
       },
       { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
     );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+    io.observe(el);
+    return () => io.disconnect();
+  }, [delay]);
 
   return (
-    <div
-      ref={ref}
-      className={`reveal ${shown ? "reveal-visible" : ""} ${className}`}
-      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
-    >
+    <Tag ref={ref as React.Ref<never>} className={`reveal${VARIANTS[variant]}${className ? ` ${className}` : ""}`}>
       {children}
-    </div>
+    </Tag>
   );
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
 import { testimonialUpdateSchema } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
+import { deleteStoredImage } from "@/lib/storage";
 
 export async function PATCH(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
@@ -39,6 +40,8 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     }
 
     await prisma.testimonial.delete({ where: { id } });
+    // Clean up the uploaded image so it doesn't linger on disk.
+    await deleteStoredImage(existing.imageUrl);
 
     await logAudit(admin.id, "DELETE_TESTIMONIAL", "Testimonial", id, {
       name: existing.name,

@@ -3,6 +3,7 @@ import "./frontend.css";
 import HeaderFrontend from "@/components-frontend/Header.frontend";
 import FooterFrontend from "@/components-frontend/Footer.frontend";
 import WhatsAppFloatFrontend from "@/components-frontend/WhatsAppFloat.frontend";
+import ScrollChrome from "@/components/ScrollChrome";
 
 export const metadata: Metadata = {
   title: "ONE STOP FITNESS — Lucknow's #1 Gym | Be Your Best",
@@ -33,6 +34,7 @@ export default function FrontendLayout({
 }) {
   return (
     <div className="frontend-root">
+      <ScrollChrome />
       <HeaderFrontend />
       <main>{children}</main>
       <FooterFrontend />

@@ -30,6 +30,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       },
     });
 
+    // If the image was replaced, remove the old uploaded file.
+    if (data.imageUrl && data.imageUrl !== offer.imageUrl) {
+      await deleteStoredImage(offer.imageUrl).catch(() => {});
+    }
+
     await logAudit(admin.id, "UPDATE_OFFER", "Offer", id, { title: updated.title });
     return ok({ id: updated.id, title: updated.title });
   } catch (error) {

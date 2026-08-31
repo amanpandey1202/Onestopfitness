@@ -2,18 +2,26 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-/**
- * Wraps content in a scroll-triggered fade-up reveal. Children animate in
- * once when they enter the viewport; `delay` staggers grids and stacks.
- */
+type RevealVariant = "up" | "left" | "right" | "zoom" | "blur";
+
+const variantClass: Record<RevealVariant, string> = {
+  up: "reveal",
+  left: "reveal-left",
+  right: "reveal-right",
+  zoom: "reveal-zoom",
+  blur: "reveal-blur",
+};
+
 export default function Reveal({
   children,
   className = "",
   delay = 0,
+  variant = "up",
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
+  variant?: RevealVariant;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [shown, setShown] = useState(false);
@@ -25,25 +33,29 @@ export default function Reveal({
       setShown(true);
       return;
     }
+    let raf = 0;
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setShown(true);
             obs.disconnect();
+            raf = requestAnimationFrame(() => setShown(true));
           }
         });
       },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      { threshold: 0.15, rootMargin: "0px 0px 0px 0px" }
     );
     obs.observe(el);
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   return (
     <div
       ref={ref}
-      className={`reveal ${shown ? "reveal-visible" : ""} ${className}`}
+      className={`${variantClass[variant]} ${shown ? "reveal-visible" : ""} ${className}`}
       style={delay ? { transitionDelay: `${delay}ms` } : undefined}
     >
       {children}

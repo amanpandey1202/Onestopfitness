@@ -8,7 +8,7 @@ export function cn(...classes: (string | false | null | undefined)[]) {
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("rounded-xl border border-white/10 bg-gym-ink", className)}>{children}</div>
+    <div className={cn("rounded-xl border border-white/10 bg-gym-ink shadow-card", className)}>{children}</div>
   );
 }
 
@@ -41,7 +41,7 @@ export function Button({
 }) {
   const styles = {
     primary:
-      "bg-gym-lime text-gym-black hover:bg-gym-lime-soft disabled:bg-gym-lime/40",
+      "bg-gym-lime text-gym-black shadow-[0_0_18px_rgba(154,217,1,0.16)] hover:bg-gym-lime-soft disabled:bg-gym-lime/40",
     secondary:
       "border border-gym-lime text-gym-lime hover:bg-gym-lime hover:text-gym-black",
     ghost: "text-white/70 hover:text-white",
@@ -50,7 +50,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-bold transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50",
         styles,
         className
       )}
@@ -77,7 +77,7 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   return (
     <input
       className={cn(
-        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition focus:border-gym-lime",
+        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition focus:border-gym-lime focus:shadow-[0_0_0_1px_rgba(154,217,1,0.3),0_0_18px_rgba(154,217,1,0.1)]",
         className
       )}
       {...props}
@@ -89,7 +89,7 @@ export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
   return (
     <textarea
       className={cn(
-        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition focus:border-gym-lime",
+        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition focus:border-gym-lime focus:shadow-[0_0_0_1px_rgba(154,217,1,0.3),0_0_18px_rgba(154,217,1,0.1)]",
         className
       )}
       {...props}
@@ -101,7 +101,7 @@ export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectE
   return (
     <select
       className={cn(
-        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white outline-none transition focus:border-gym-lime",
+        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white outline-none transition focus:border-gym-lime focus:shadow-[0_0_0_1px_rgba(154,217,1,0.3),0_0_18px_rgba(154,217,1,0.1)]",
         className
       )}
       {...props}
@@ -147,7 +147,7 @@ export function Badge({ children, tone = "neutral" }: { children: ReactNode; ton
     green: "bg-gym-lime/15 text-gym-lime",
     red: "bg-red-500/15 text-red-300",
     yellow: "bg-yellow-500/15 text-yellow-300",
-    neutral: "bg-white/10 text-white/70",
+    neutral: "bg-white/10 text-white/75",
   };
   return (
     <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold", tones[tone])}>
@@ -158,9 +158,9 @@ export function Badge({ children, tone = "neutral" }: { children: ReactNode; ton
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-white/15 py-14 text-center">
-      <p className="text-sm font-semibold text-white/60">{title}</p>
-      {children && <div className="mt-3 text-sm text-white/40">{children}</div>}
+    <div className="rounded-xl border border-dashed border-white/15 py-14 text-center r-enter">
+      <p className="text-sm font-semibold text-white/65">{title}</p>
+      {children && <div className="mt-3 text-sm text-white/45">{children}</div>}
     </div>
   );
 }

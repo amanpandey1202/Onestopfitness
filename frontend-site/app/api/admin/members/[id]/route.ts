@@ -38,9 +38,36 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const body = await req.json();
     const data = memberUpdateSchema.parse(body);
 
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: { memberProfile: true },
+    });
     if (!user) return NextResponse.json({ error: "Member not found" }, { status: 404 });
 
+    // Prevent the active admin from accidentally suspending/deactivating their own account.
+    if (id === admin.id && data.isActive === false) {
+      return NextResponse.json({ error: "You can't suspend your own account" }, { status: 400 });
+    }
+
+    const profileData = {
+      fitnessGoal: data.fitnessGoal,
+      notes: data.notes,
+      // joiningDate column is NOT NULL; a real value writes, otherwise skip.
+      ...(data.joiningDate ? { joiningDate: data.joiningDate } : {}),
+      alternatePhone: data.alternatePhone,
+      aadhaarNumber:
+        data.aadhaarNumber === null
+          ? null
+          : data.aadhaarNumber
+            ? encryptField(data.aadhaarNumber)
+            : undefined,
+      address: data.address,
+      parentName: data.parentName,
+      parentPhone: data.parentPhone,
+    };
+
+    // A user could lack a MemberProfile (e.g. legacy/imported accounts). Use
+    // upsert so PATCH never throws P2025 on a missing profile row.
     const updated = await prisma.user.update({
       where: { id },
       data: {
@@ -48,15 +75,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         phone: data.phone,
         isActive: data.isActive,
         memberProfile: {
-          update: {
-            fitnessGoal: data.fitnessGoal,
-            notes: data.notes,
-            ...(data.joiningDate ? { joiningDate: data.joiningDate } : {}),
-            alternatePhone: data.alternatePhone,
-            aadhaarNumber: data.aadhaarNumber ? encryptField(data.aadhaarNumber) : undefined,
-            address: data.address,
-            parentName: data.parentName,
-            parentPhone: data.parentPhone,
+          upsert: {
+            create: profileData,
+            update: profileData,
           },
         },
       },

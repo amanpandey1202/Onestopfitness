@@ -11,14 +11,18 @@ import { syncMemberToAirtable } from "@/lib/airtable";
 import { nextMemberCode } from "@/lib/memberCode";
 import { computeMembershipEndDate } from "@/lib/format";
 import { encryptField, decryptField } from "@/lib/crypto";
+import { resumeExpiredFreezes } from "@/lib/membership";
 
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin();
+    await resumeExpiredFreezes(prisma);
     const url = new URL(req.url);
     const search = url.searchParams.get("search")?.trim();
     const status = url.searchParams.get("status"); // active | suspended | expired | all
+    const category = url.searchParams.get("category"); // member | new | all
 
+    const now = new Date();
     const where: Prisma.UserWhereInput = { role: Role.MEMBER };
     if (search) {
       where.OR = [
@@ -30,12 +34,41 @@ export async function GET(req: NextRequest) {
     }
     if (status === "suspended") where.isActive = false;
     if (status === "active") where.isActive = true;
+    if (status === "expired") {
+      where.isActive = true;
+      where.memberships = { some: { status: "ACTIVE", endDate: { lt: now } } };
+    }
+    if (status === "absentee") {
+      where.isActive = true;
+      where.attendance = { none: { checkIn: { gte: new Date(Date.now() - 14 * 86_400_000) } } };
+    }
+
+    // Category is derived from whether they've ever been given access (a paid
+    // membership or a PAID payment). "New registrations" are accounts that
+    // signed up but never paid, so they're not counted as real members yet.
+    if (category === "member") {
+      where.OR = [
+        ...(where.OR ?? []),
+        { memberships: { some: {} } },
+        { payments: { some: { status: "PAID" } } },
+      ];
+    } else if (category === "new") {
+      where.AND = [
+        { memberships: { none: {} } },
+        { payments: { none: { status: "PAID" } } },
+      ];
+    }
 
     const members = await prisma.user.findMany({
       where,
       include: {
         memberProfile: true,
         memberships: { include: { plan: true }, orderBy: { endDate: "desc" } },
+        payments: {
+          where: { status: "PAID" },
+          select: { id: true },
+          take: 1,
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -43,8 +76,10 @@ export async function GET(req: NextRequest) {
     // Never send password hashes to the client; decrypt PII for display.
     return ok({
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      members: members.map(({ passwordHash, ...member }) => ({
+      members: members.map(({ passwordHash, payments, ...member }) => ({
         ...member,
+        // A "paid member" — never just a signup.
+        category: member.memberships.length > 0 || payments.length > 0 ? "member" : "new",
         memberProfile: member.memberProfile
           ? {
               ...member.memberProfile,
@@ -70,29 +105,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A user with this email already exists" }, { status: 409 });
     }
 
-    const user = await prisma.user.create({
-      data: {
-        name: data.name,
-        email,
-        phone: data.phone,
-        memberCode: await nextMemberCode(prisma),
-        passwordHash: await hashPassword(data.password),
-        role: Role.MEMBER,
-        memberProfile: {
-          create: {
-            fitnessGoal: data.fitnessGoal,
-            notes: data.notes,
-            joiningDate: data.joiningDate ?? new Date(),
-            alternatePhone: data.alternatePhone,
-            aadhaarNumber: data.aadhaarNumber ? encryptField(data.aadhaarNumber) : undefined,
-            address: data.address,
-            parentName: data.parentName,
-            parentPhone: data.parentPhone,
+    // nextMemberCode is an O(n) max+1 scan; two concurrent creates can both get
+    // the same code. Retry the create a couple of times if a memberCode
+    // collision sneaks in (same pattern the CSV import uses).
+    let user: Awaited<ReturnType<typeof prisma.user.create>> | undefined;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        user = await prisma.user.create({
+          data: {
+            name: data.name,
+            email,
+            phone: data.phone,
+            memberCode: await nextMemberCode(prisma),
+            passwordHash: await hashPassword(data.password),
+            role: Role.MEMBER,
+            // Admin-added members are onboarded in person — mark verified so the
+            // system never expects an email-verification click from them.
+            emailVerified: new Date(),
+            memberProfile: {
+              create: {
+                fitnessGoal: data.fitnessGoal,
+                notes: data.notes,
+                joiningDate: data.joiningDate ?? new Date(),
+                alternatePhone: data.alternatePhone,
+                aadhaarNumber: data.aadhaarNumber ? encryptField(data.aadhaarNumber) : undefined,
+                address: data.address,
+                parentName: data.parentName,
+                parentPhone: data.parentPhone,
+              },
+            },
           },
-        },
-      },
-      include: { memberProfile: true },
-    });
+          include: { memberProfile: true },
+        });
+        break;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.includes("Unique constraint") && msg.includes("memberCode") && attempt < 2) {
+          continue;
+        }
+        throw err;
+      }
+    }
+    if (!user) throw new Error("Failed to create member");
 
     if (data.planId) {
       const plan = await prisma.membershipPlan.findUnique({ where: { id: data.planId } });

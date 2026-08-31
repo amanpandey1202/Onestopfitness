@@ -33,6 +33,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const target = await prisma.user.findUnique({ where: { id } });
     if (!target) return NextResponse.json({ error: "Trainer not found" }, { status: 404 });
 
+    // Prevent the active admin from accidentally suspending their own account.
+    if (id === admin.id && data.isActive === false) {
+      return NextResponse.json({ error: "You can't suspend your own account" }, { status: 400 });
+    }
+
     const profileFields = {
       specialization: data.specialization,
       bio: data.bio,
@@ -46,21 +51,25 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       isFounder: data.isFounder,
     };
 
+    // `isActive` is a login-level flag on User (checked by getSessionUser).
+    // Surfacing it to the top-level update makes "Suspend" actually revoke
+    // portal access, not just flip the trainerProfile display flag.
     const updated = await prisma.user.update({
       where: { id },
       data: {
         name: data.name,
         phone: data.phone,
+        isActive: data.isActive,
         trainerProfile: {
           upsert: {
-            create: { ...profileFields, specialization: data.specialization ?? "Trainer" },
+            create: { ...profileFields, isActive: data.isActive ?? true, specialization: data.specialization ?? "Trainer" },
             update: profileFields,
           },
         },
       },
     });
 
-    await logAudit(admin.id, "UPDATE_TRAINER", "User", id);
+    await logAudit(admin.id, data.isActive === false ? "SUSPEND_TRAINER" : "UPDATE_TRAINER", "User", id);
     return ok({ id: updated.id, name: updated.name });
   } catch (error) {
     return fail(error);

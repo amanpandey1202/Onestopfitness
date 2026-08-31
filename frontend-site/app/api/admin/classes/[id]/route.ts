@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
+import { classUpdateSchema } from "@/lib/validation";
 
 export async function PATCH(
   req: NextRequest,
@@ -11,19 +12,20 @@ export async function PATCH(
   try {
     const admin = await requireAdmin();
     const { id } = await ctx.params;
-    const body = await req.json();
+    const data = classUpdateSchema.parse(await req.json());
     const cls = await prisma.classSchedule.update({
       where: { id },
       data: {
-        name: body.name,
-        description: body.description ?? null,
-        trainerId: body.trainerId ?? null,
-        dayOfWeek: body.dayOfWeek,
-        startTime: body.startTime,
-        endTime: body.endTime,
-        maxCapacity: body.maxCapacity,
-        location: body.location ?? null,
-        isActive: body.isActive,
+        name: data.name,
+        description: data.description,
+        trainerId: data.trainerId,
+        dayOfWeek: data.dayOfWeek,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        durationMins: data.durationMins,
+        maxCapacity: data.maxCapacity,
+        location: data.location,
+        isActive: data.isActive,
       },
     });
     await logAudit(admin.id, "UPDATE_CLASS", "ClassSchedule", id);

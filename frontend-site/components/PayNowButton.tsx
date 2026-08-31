@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { cn } from "@/components/admin/ui";
 
 type MeResponse = {
   user?: { name: string; email: string; phone: string | null } | null;
@@ -26,7 +27,16 @@ function loadRazorpayScript(): Promise<void> {
   });
 }
 
-export default function PayNowButton({ plan }: { plan: { id: string; name: string; price: number } }) {
+const baseBtn =
+  "inline-flex w-full items-center justify-center rounded-md px-4 py-2.5 text-xs font-bold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:opacity-50";
+
+export default function PayNowButton({
+  plan,
+  variant = "dark",
+}: {
+  plan: { id: string; name: string; price: number };
+  variant?: "dark" | "light";
+}) {
   const [me, setMe] = useState<MeResponse | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -119,7 +129,7 @@ export default function PayNowButton({ plan }: { plan: { id: string; name: strin
 
   if (me === undefined) {
     return (
-      <span className="inline-flex w-full items-center justify-center rounded-md border border-white/15 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-white/40">
+      <span className={cn(baseBtn, "border border-white/15 text-white/40")}>
         Loading…
       </span>
     );
@@ -129,7 +139,12 @@ export default function PayNowButton({ plan }: { plan: { id: string; name: strin
     return (
       <Link
         href="/login?next=/pricing"
-        className="inline-flex w-full items-center justify-center rounded-md border border-gym-lime/50 bg-gym-ink px-4 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-gym-lime transition hover:border-gym-lime hover:bg-gym-lime/15"
+        className={cn(
+          baseBtn,
+          variant === "light"
+            ? "border border-[#101416] bg-[#101416] text-[#ece8dc] hover:bg-gym-lime hover:text-[#101416]"
+            : "border border-gym-lime/50 bg-gym-ink text-gym-lime hover:border-gym-lime hover:bg-gym-lime/15"
+        )}
       >
         Login to Pay Online
       </Link>
@@ -142,7 +157,12 @@ export default function PayNowButton({ plan }: { plan: { id: string; name: strin
         type="button"
         onClick={startPayment}
         disabled={busy}
-        className="inline-flex w-full items-center justify-center rounded-md border border-gym-lime/50 bg-gym-ink px-4 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-gym-lime transition hover:border-gym-lime hover:bg-gym-lime/15 hover:shadow-[0_0_18px_rgba(154,217,1,0.22)] disabled:cursor-not-allowed disabled:opacity-50"
+        className={cn(
+          baseBtn,
+          variant === "light"
+            ? "border border-[#101416] bg-[#101416] text-[#ece8dc] hover:bg-gym-lime hover:text-[#101416] hover:shadow-[0_0_18px_rgba(200,255,40,0.35)]"
+            : "border border-gym-lime/50 bg-gym-ink text-gym-lime hover:border-gym-lime hover:bg-gym-lime/15 hover:shadow-[0_0_18px_rgba(154,217,1,0.22)]"
+        )}
       >
         {busy ? "Processing…" : "Pay Online · ₹" + plan.price.toLocaleString("en-IN")}
       </button>

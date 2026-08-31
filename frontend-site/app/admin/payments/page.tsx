@@ -45,8 +45,15 @@ export default function AdminPaymentsPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  // Debounce the search input so we don't fire a server request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setAppliedSearch(search.trim()), 400);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // Manual payment modal state
   const [showModal, setShowModal] = useState(false);
@@ -61,7 +68,7 @@ export default function AdminPaymentsPage() {
 
   const fetchPayments = useCallback(() => {
     const params = new URLSearchParams();
-    if (search) params.set("search", search);
+    if (appliedSearch) params.set("search", appliedSearch);
     if (methodFilter) params.set("method", methodFilter);
     if (statusFilter) params.set("status", statusFilter);
 
@@ -73,7 +80,7 @@ export default function AdminPaymentsPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [search, methodFilter, statusFilter]);
+  }, [appliedSearch, methodFilter, statusFilter]);
 
   useEffect(() => {
     fetchPayments();

@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
     const data = bodySchema.parse(body);
 
     // Get current logged in member, or lookup memberId from reminder
-    let member = await getSessionUser();
+    const sessionUser = await getSessionUser();
+    let member = sessionUser;
     if (!member && data.memberId) {
       member = await prisma.user.findUnique({ where: { id: data.memberId } });
     }
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     const isTestMode = !razorpayConfigured();
+    const isSessionOwner = sessionUser != null && sessionUser.id === member.id;
     let orderId: string;
 
     if (isTestMode) {
@@ -97,17 +99,21 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Only return the paying member's prefill PII when the caller is that member
+    // themselves (authenticated session). Anonymous "pay for a member" callers get
+    // no prefill — Razorpay will collect the payer's details in the checkout UI —
+    // so we never disclose a third party's name/email/phone via this endpoint.
+    const prefill = isSessionOwner
+      ? { name: member.name, email: member.email, contact: member.phone ?? "" }
+      : {};
+
     return ok({
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || "rzp_test_demo",
       isTestMode,
       orderId,
       amount: Math.round(finalPrice * 100), // paise
       currency: "INR",
-      prefill: {
-        name: member.name,
-        email: member.email,
-        contact: member.phone ?? "",
-      },
+      prefill,
       plan: { id: plan.id, name: plan.name, originalPrice: plan.price, finalPrice, discountAmount },
       offerTitle: offer?.title ?? null,
     });

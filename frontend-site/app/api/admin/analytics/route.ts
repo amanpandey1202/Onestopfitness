@@ -15,20 +15,25 @@ export async function GET() {
     await requireAdmin();
 
     const now = new Date();
+    // Bucket everything in IST (UTC+5:30) so it matches the dashboard timezone.
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + IST_OFFSET_MS);
 
-    // Last 12 calendar months
+    // Last 12 calendar months (IST)
     const months: { year: number; month: number; label: string }[] = [];
     for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const d = new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth() - i, 1));
       months.push({
-        year: d.getFullYear(),
-        month: d.getMonth(),
-        label: d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" }),
+        year: d.getUTCFullYear(),
+        month: d.getUTCMonth(),
+        label: d.toLocaleDateString("en-IN", { month: "short", year: "2-digit", timeZone: "UTC" }),
       });
     }
 
     // Fetch all PAID payments in last 12 months + plan info
-    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const twelveMonthsAgo = new Date(
+      Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth() - 11, 1) - IST_OFFSET_MS
+    );
     const [payments, allAttendance, newMembers] = await Promise.all([
       prisma.payment.findMany({
         where: { status: "PAID", paidAt: { gte: twelveMonthsAgo } },
@@ -44,12 +49,15 @@ export async function GET() {
       }),
     ]);
 
+    const istOf = (v: Date | null) =>
+      v ? new Date(v.getTime() + IST_OFFSET_MS) : null;
+
     // Monthly revenue
     const monthlyRevenue = months.map(({ year, month, label }) => {
       const total = payments
         .filter((p) => {
-          const d = p.paidAt ? new Date(p.paidAt) : null;
-          return d && d.getFullYear() === year && d.getMonth() === month;
+          const d = istOf(p.paidAt);
+          return d && d.getUTCFullYear() === year && d.getUTCMonth() === month;
         })
         .reduce((sum, p) => sum + p.amount, 0);
       return { label, revenue: total };
@@ -62,13 +70,13 @@ export async function GET() {
       revenueByPlan[name] = (revenueByPlan[name] || 0) + p.amount;
     }
 
-    // Attendance heatmap: buckets by hour (0-23) and day (0=Sun..6=Sat)
-    // Returns a 7x24 grid — hours are grouped into 4-hour blocks for readability
+    // Attendance heatmap: buckets by hour (0-23) and day (0=Sun..6=Sat) in IST
     const heatmap: Record<string, number> = {};
     for (const att of allAttendance) {
-      const d = new Date(att.checkIn);
-      const day = d.getDay();
-      const hour = d.getHours();
+      const d = istOf(att.checkIn);
+      if (!d) continue;
+      const day = d.getUTCDay();
+      const hour = d.getUTCHours();
       const key = `${day}-${hour}`;
       heatmap[key] = (heatmap[key] || 0) + 1;
     }
@@ -87,12 +95,12 @@ export async function GET() {
         };
       });
 
-    // New members per month
+    // New members per month (IST)
     const memberGrowth = months.map(({ year, month, label }) => ({
       label,
       newMembers: newMembers.filter((m) => {
-        const d = new Date(m.createdAt);
-        return d.getFullYear() === year && d.getMonth() === month;
+        const d = istOf(m.createdAt);
+        return d && d.getUTCFullYear() === year && d.getUTCMonth() === month;
       }).length,
     }));
 

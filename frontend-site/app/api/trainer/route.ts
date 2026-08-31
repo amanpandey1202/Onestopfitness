@@ -10,7 +10,7 @@ import { fail, ok } from "@/lib/api";
 export async function GET() {
   try {
     const trainer = await requireRole(Role.TRAINER);
-    const [profile, workoutPlans, memberCount] = await Promise.all([
+    const [profile, workoutPlans, workoutPlanCount, membersCoached] = await Promise.all([
       prisma.trainerProfile.findUnique({ where: { userId: trainer.id } }),
       prisma.workoutPlan.findMany({
         where: { trainerId: trainer.id },
@@ -22,9 +22,15 @@ export async function GET() {
         take: 30,
       }),
       prisma.workoutPlan.count({ where: { trainerId: trainer.id } }),
+      // Distinct members coached — counted across ALL plans, not just the
+      // 30-plan page, so the stat isn't undercounted for busy trainers.
+      prisma.workoutPlan.findMany({
+        where: { trainerId: trainer.id },
+        distinct: ["memberId"],
+        select: { memberId: true },
+      }),
     ]);
 
-    const memberIds = workoutPlans.map((p) => p.memberId);
     return ok({
       trainer: {
         id: trainer.id,
@@ -34,7 +40,7 @@ export async function GET() {
         profileImageUrl: trainer.profileImageUrl,
       },
       profile,
-      stats: { workoutPlans: memberCount, membersCoached: new Set(memberIds).size },
+      stats: { workoutPlans: workoutPlanCount, membersCoached: membersCoached.length },
       workoutPlans,
     });
   } catch (error) {

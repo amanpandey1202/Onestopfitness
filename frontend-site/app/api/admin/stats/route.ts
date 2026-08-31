@@ -69,11 +69,14 @@ export async function GET() {
         where: { status: "PAID", paidAt: { gte: startOfMonth, lt: startOfNextMonth } },
         _sum: { amount: true },
       }),
-      // Count active members with no check-in in last 14 days
+      // Count active members with no check-in in last 14 days (excluding
+      // brand-new members who joined within the window and haven't had a
+      // chance to check in yet).
       prisma.user.count({
         where: {
           role: Role.MEMBER,
           isActive: true,
+          createdAt: { lte: fourteenDaysAgo },
           attendance: {
             none: {
               checkIn: { gte: fourteenDaysAgo },
@@ -145,7 +148,7 @@ export async function GET() {
     const thisMonthRevenue = monthlyRevenueResult._sum.amount ?? 0;
     const revenueGrowth =
       lastMonthRevenue === 0
-        ? 100
+        ? 0
         : Math.round(((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100);
 
     // Members last month vs this month

@@ -19,14 +19,16 @@ export async function GET(req: NextRequest) {
           { memberCode: query },
         ],
       },
-      select: { id: true, name: true, email: true },
+      select: { id: true },
     });
 
     if (!user) {
       return NextResponse.json({ memberId: null });
     }
 
-    return NextResponse.json({ memberId: user.id, name: user.name, email: user.email });
+    // Only the member id is returned — never name/email/phone. The public pay
+    // page only needs the id to create an order, so no PII is exposed here.
+    return NextResponse.json({ memberId: user.id });
   } catch (error) {
     return NextResponse.json({ memberId: null });
   }

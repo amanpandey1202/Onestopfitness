@@ -2,6 +2,7 @@ import PageHeroFrontend from "@/components-frontend/PageHero.frontend";
 import BMICalculatorFrontend from "@/components-frontend/BMICalculator.frontend";
 import WhatsAppButtonFrontend from "@/components-frontend/WhatsAppButton.frontend";
 import Icon, { type IconName } from "@/components-frontend/Icons.frontend";
+import Reveal from "@/components/Reveal";
 import { site } from "@/data/site";
 
 export const metadata = {
@@ -57,8 +58,9 @@ export default function FrontendContactPage() {
       {/* INFO CARDS */}
       <section className="section mx-auto max-w-7xl">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {infoCards.map((card) => (
-            <div key={card.title} className="panel p-7">
+          {infoCards.map((card, i) => (
+            <Reveal key={card.title} delay={i * 70} className="h-full">
+              <div className="panel h-full p-7">
               <div className="flex h-12 w-12 items-center justify-center rounded-md border border-gym-lime/40 bg-gym-lime/10 text-gym-lime shadow-[0_0_20px_rgba(154,217,1,0.18)]">
                 <Icon name={card.icon} className="h-6 w-6" />
               </div>
@@ -82,6 +84,7 @@ export default function FrontendContactPage() {
                 </a>
               )}
             </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -89,7 +92,8 @@ export default function FrontendContactPage() {
       {/* MAP + BMI */}
       <section className="border-y border-white/10 bg-[#0c0c0c]">
         <div className="section mx-auto grid max-w-7xl gap-10 lg:grid-cols-2">
-          <div>
+          <Reveal variant="left">
+            <div>
             <h2 className="font-anton text-3xl uppercase leading-none text-white">
               Location <span className="glow-lime">Map</span>
             </h2>
@@ -116,20 +120,25 @@ export default function FrontendContactPage() {
               />
             </div>
           </div>
+          </Reveal>
 
-          <BMICalculatorFrontend />
+          <Reveal variant="right" delay={120}>
+            <BMICalculatorFrontend />
+          </Reveal>
         </div>
       </section>
 
       {/* CTA */}
       <section className="section mx-auto max-w-7xl text-center">
-        <h2 className="font-anton uppercase leading-[0.9] text-white sm:text-5xl text-4xl">
-          Have a <span className="glow-lime">Question?</span>
-        </h2>
-        <p className="mt-4 text-white/60">Message us and we&apos;ll get back to you right away.</p>
-        <div className="mt-8">
-          <WhatsAppButtonFrontend label="Chat on WhatsApp" />
-        </div>
+        <Reveal>
+          <h2 className="font-anton uppercase leading-[0.9] text-white sm:text-5xl text-4xl">
+            Have a <span className="glow-lime">Question?</span>
+          </h2>
+          <p className="mt-4 text-white/60">Message us and we&apos;ll get back to you right away.</p>
+          <div className="mt-8">
+            <WhatsAppButtonFrontend label="Chat on WhatsApp" />
+          </div>
+        </Reveal>
       </section>
     </>
   );

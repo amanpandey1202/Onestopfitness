@@ -288,9 +288,31 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
-    // Issue 3 fix: Auto-polling every 30 seconds for real-time dashboard updates
-    const timer = setInterval(fetchDashboardData, 30_000);
-    return () => clearInterval(timer);
+
+    // Refresh while the tab is visible only. Pausing background polling saves the
+    // server from running heavy aggregate queries when nobody is looking.
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const startPolling = () => {
+      if (timer) return;
+      timer = setInterval(() => {
+        // Skip the refresh if the document is hidden (e.g. another tab active).
+        if (document.visibilityState === "visible") fetchDashboardData();
+      }, 30_000);
+    };
+    const stopPolling = () => {
+      if (timer) { clearInterval(timer); timer = null; }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") fetchDashboardData();
+    };
+    startPolling();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onVisibility);
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onVisibility);
+    };
   }, [fetchDashboardData]);
 
   if (error) return (
@@ -467,9 +489,9 @@ export default function AdminDashboardPage() {
         <div className="flex flex-wrap gap-3">
           <QuickAction href="/admin/members?new=1" label="Add Member" icon="➕" tone="green" />
           <QuickAction href="/admin/broadcast" label="WhatsApp Broadcast" icon="📤" tone="green" />
-          <QuickAction href="/admin/members?export=1" label="Export Members" icon="📊" />
-          <QuickAction href="/admin/offers/new" label="New Offer" icon="🏷️" tone="yellow" />
-          <QuickAction href="/admin/competitions/new" label="New Competition" icon="🏆" />
+          <QuickAction href="/api/admin/members/export" label="Export Members" icon="📊" />
+          <QuickAction href="/admin/offers?new=1" label="New Offer" icon="🏷️" tone="yellow" />
+          <QuickAction href="/admin/competitions?new=1" label="New Competition" icon="🏆" />
           <QuickAction href="/admin/gallery" label="Manage Gallery" icon="🖼️" />
           <QuickAction href="/admin/testimonials" label="Testimonials" icon="⭐" />
           <QuickAction href="/admin/announcements" label="Announcements" icon="📢" />

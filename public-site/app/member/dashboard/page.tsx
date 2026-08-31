@@ -78,19 +78,19 @@ export default function MemberDashboardPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/45">Total check-ins</p>
-          <p className="mt-2 font-display text-3xl font-bold text-gym-lime">{attendance.total}</p>
+        <Card className="p-5 active:scale-[0.99]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Total check-ins</p>
+          <p className="stat-num mt-2 text-3xl uppercase">{attendance.total}</p>
         </Card>
-        <Card className="p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/45">Membership days left</p>
-          <p className="mt-2 font-display text-3xl font-bold text-gym-lime">
+        <Card className="p-5 active:scale-[0.99]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Membership days left</p>
+          <p className="stat-num mt-2 text-3xl uppercase">
             {membership ? membership.daysRemaining : "—"}
           </p>
         </Card>
-        <Card className="p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/45">Challenges joined</p>
-          <p className="mt-2 font-display text-3xl font-bold text-gym-lime">{joinedCompetitions.length}</p>
+        <Card className="p-5 active:scale-[0.99]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Challenges joined</p>
+          <p className="stat-num mt-2 text-3xl uppercase">{joinedCompetitions.length}</p>
         </Card>
       </div>
 
@@ -105,15 +105,15 @@ export default function MemberDashboardPage() {
                 <p className="text-gym-lime">₹{membership.plan.price.toLocaleString("en-IN")}/mo</p>
               </div>
               {membership.plan.description && (
-                <p className="mt-1 text-sm text-white/55">{membership.plan.description}</p>
+                <p className="mt-1 text-sm text-white/70">{membership.plan.description}</p>
               )}
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-white/45">Valid from</p>
+                  <p className="text-xs text-white/60">Valid from</p>
                   <p className="font-semibold text-white/85">{formatDate(membership.startDate)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-white/45">Valid till</p>
+                  <p className="text-xs text-white/60">Valid till</p>
                   <p className="font-semibold text-white/85">{formatDate(membership.endDate)}</p>
                 </div>
               </div>
@@ -134,12 +134,12 @@ export default function MemberDashboardPage() {
               )}
             </>
           ) : (
-            <p className="mt-4 text-sm text-white/55">
-              You don&apos;t have an active membership yet.{" "}
-              <Link href="/pricing" className="font-bold text-gym-lime hover:underline">
-                View plans
-              </Link>
-            </p>
+<p className="mt-4 text-sm text-white/70">
+            You don&apos;t have an active membership yet.{" "}
+            <Link href="/pricing" className="font-bold text-gym-lime hover:underline">
+              View plans
+            </Link>
+          </p>
           )}
         </Card>
 
@@ -164,12 +164,12 @@ export default function MemberDashboardPage() {
                 <p className="text-sm text-white/60">You haven&apos;t checked in today.</p>
               </div>
             )}
-            <Link
-              href="/member/attendance"
-              className="mt-4 inline-block rounded-md bg-gym-lime px-4 py-2 text-sm font-bold text-gym-black transition hover:bg-gym-lime-soft"
-            >
-              {attendance.todayCheckIn ? "View Attendance" : "Check In Now"}
-            </Link>
+<Link
+            href="/member/attendance"
+            className="mt-4 inline-block rounded-md bg-gym-lime px-4 py-2 text-sm font-bold text-gym-black transition hover:bg-gym-lime-soft active:scale-95"
+          >
+            {attendance.todayCheckIn ? "View Attendance" : "Check In Now"}
+          </Link>
           </div>
 
           {attendance.recent.length > 0 && (
@@ -205,19 +205,25 @@ export default function MemberDashboardPage() {
           <h3 className="mt-3 text-xl font-bold text-white">{workoutPlan.title}</h3>
           {workoutPlan.goal && <p className="text-sm font-semibold text-gym-lime">{workoutPlan.goal}</p>}
           {workoutPlan.description && <p className="mt-1 text-sm text-white/60">{workoutPlan.description}</p>}
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {workoutPlan.exercises.map((ex) => (
-              <div key={ex.id} className="rounded-lg border border-white/10 bg-gym-black px-4 py-3">
-                <p className="font-semibold text-white">{ex.exerciseName}</p>
-                <p className="text-sm text-white/55">
-                  {ex.sets ? `${ex.sets} sets` : ""}
-                  {ex.reps ? ` × ${ex.reps} reps` : ""}
-                  {ex.duration ? ` · ${ex.duration}` : ""}
-                  {ex.restSeconds ? ` · ${ex.restSeconds}s rest` : ""}
-                </p>
-              </div>
-            ))}
-          </div>
+          {workoutPlan.exercises.length > 0 ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {workoutPlan.exercises.map((ex) => (
+                <div key={ex.id} className="rounded-lg border border-white/10 bg-gym-black px-4 py-3">
+                  <p className="font-semibold text-white">{ex.exerciseName}</p>
+                  <p className="text-sm text-white/70">
+                    {ex.sets ? `${ex.sets} sets` : ""}
+                    {ex.reps ? ` × ${ex.reps} reps` : ""}
+                    {ex.duration ? ` · ${ex.duration}` : ""}
+                    {ex.restSeconds ? ` · ${ex.restSeconds}s rest` : ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-white/70">
+              Your trainer hasn&apos;t added exercises yet — check back soon.
+            </p>
+          )}
         </Card>
       )}
 

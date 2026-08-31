@@ -48,12 +48,16 @@ export async function POST(req: NextRequest) {
         phone: data.phone,
         passwordHash: await hashPassword(data.password),
         role: Role.TRAINER,
+        // Admin-added trainers are onboarded in person — mark verified so the
+        // system never expects an email-verification click from them.
+        emailVerified: new Date(),
         trainerProfile: {
           create: {
             specialization: data.specialization,
             bio: data.bio,
             experience: data.experience,
             instagram: data.instagram,
+            profileImageUrl: data.profileImageUrl,
             founderNote: data.founderNote,
             founderTitles:
               data.founderTitles === undefined

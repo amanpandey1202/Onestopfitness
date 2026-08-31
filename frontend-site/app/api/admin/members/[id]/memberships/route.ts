@@ -36,8 +36,17 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     // Calendar-month arithmetic: Feb 15 → Mar 15, Dec 29 → Jan 29
     const end = computeMembershipEndDate(start, plan.durationDays);
 
-    const membership = await prisma.membership.create({
-      data: { memberId: id, planId: plan.id, startDate: start, endDate: end },
+    // Prevent duplicate overlapping ACTIVE memberships: any existing ACTIVE
+    // membership is superseded by this new one. Done in a transaction with the
+    // create so a member can never hold two active memberships simultaneously.
+    const membership = await prisma.$transaction(async (tx) => {
+      await tx.membership.updateMany({
+        where: { memberId: id, status: "ACTIVE" },
+        data: { status: "CANCELLED" },
+      });
+      return tx.membership.create({
+        data: { memberId: id, planId: plan.id, startDate: start, endDate: end },
+      });
     });
 
     const member = await prisma.user.findUnique({ where: { id } });

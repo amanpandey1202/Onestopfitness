@@ -47,6 +47,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       },
     });
 
+    // If the banner was replaced, remove the old uploaded file.
+    if (data.bannerUrl && data.bannerUrl !== competition.bannerUrl) {
+      await deleteStoredImage(competition.bannerUrl).catch(() => {});
+    }
+
     await logAudit(admin.id, "UPDATE_COMPETITION", "Competition", id, { title: updated.title, status: updated.status });
     return ok({ id: updated.id, title: updated.title });
   } catch (error) {

@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
+import { resumeExpiredFreezes } from "@/lib/membership";
 
 const freezeSchema = z.object({
   action: z.enum(["freeze", "unfreeze"]),
@@ -32,6 +33,10 @@ export async function POST(
     const { id } = await ctx.params;
     const body = await req.json();
     const data = freezeSchema.parse(body);
+
+    // Lazily auto-resume any freezes whose window has already ended,
+    // then re-fetch the target so the current state is accurate.
+    await resumeExpiredFreezes(prisma);
 
     const membership = await prisma.membership.findUnique({ where: { id: data.membershipId } });
     if (!membership || membership.memberId !== id) {

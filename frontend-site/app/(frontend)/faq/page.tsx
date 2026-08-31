@@ -3,6 +3,7 @@ import PageHeroFrontend from "@/components-frontend/PageHero.frontend";
 import SectionHeadingFrontend from "@/components-frontend/SectionHeading.frontend";
 import FAQAccordionFrontend from "@/components-frontend/FAQAccordion.frontend";
 import TestimonialFormFrontend from "@/components-frontend/TestimonialForm.frontend";
+import Reveal from "@/components/Reveal";
 
 export const metadata = {
   title: "FAQ — ONE STOP FITNESS",
@@ -20,19 +21,21 @@ export default function FrontendFaqPage() {
       />
 
       <section className="section mx-auto max-w-7xl">
-        <div className="mx-auto max-w-3xl">
-          <FAQAccordionFrontend />
-        </div>
-        <p className="mt-10 text-center text-sm text-white/55">
-          Still unsure?{" "}
-          <Link
-            href="/contact"
-            className="nav-link inline-block font-bold uppercase tracking-[0.15em] text-gym-lime"
-          >
-            Contact us
-          </Link>{" "}
-          or message us on WhatsApp.
-        </p>
+        <Reveal>
+          <div className="mx-auto max-w-3xl">
+            <FAQAccordionFrontend />
+          </div>
+          <p className="mt-10 text-center text-sm text-white/55">
+            Still unsure?{" "}
+            <Link
+              href="/contact"
+              className="nav-link inline-block font-bold uppercase tracking-[0.15em] text-gym-lime"
+            >
+              Contact us
+            </Link>{" "}
+            or message us on WhatsApp.
+          </p>
+        </Reveal>
       </section>
 
       {/* TESTIMONIALS */}

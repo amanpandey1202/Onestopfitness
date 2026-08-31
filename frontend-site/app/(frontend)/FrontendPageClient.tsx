@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { site, whatsappLink } from "@/data/site";
 import PayNowButton from "@/components/PayNowButton";
 import NewsSlideshow from "@/components/NewsSlideshow";
+import CountUp from "@/components/CountUp";
+import ScrollZoom from "@/components/ScrollZoom";
+import Reveal from "@/components/Reveal";
 
 /* ─── Inline SVG Icons ─────────────────────────────────────────────────── */
 const ChevL = () => <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
@@ -49,6 +53,12 @@ const services = [
   { num: "06", title: "High-Tech Equipment",  copy: "Premium free weights and machines, maintained for the way you train.",       tag: "BUILT FOR PROGRESS",       img: "/images/gallery/equipment.svg" },
 ];
 const classes = ["Zumba", "Aerobics", "Spinning", "Yoga", "Martial Arts", "Conditioning"];
+const stats = [
+  { n: 22, s: "", label: "years of showing up" },
+  { n: 6, s: "", label: "days to make it count" },
+  { n: 5, s: "+", label: "ways to train your way" },
+  { n: 1, s: "", label: "standard: your best" },
+];
 const faqs = [
   ["What are your opening hours?",           "We are open Monday through Saturday, 6:00 AM to 10:00 PM. There is enough room in the day to make your training non-negotiable."],
   ["Do I need to be experienced to join?",   "Not at all. Our coaches meet you at your current level, then build the skill, confidence and strength to take you further."],
@@ -124,12 +134,16 @@ function FAQSection() {
           </div>
           <div>
             {faqs.map(([q, a], i) => (
-              <div className="faq-item" key={q}>
+              <div className={`faq-item${open === i ? " open" : ""}`} key={q}>
                 <button className="faq-question" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}>
                   <span>{q}</span>
                   {open === i ? <MinusI /> : <PlusI />}
                 </button>
-                {open === i && <div className="faq-answer">{a}</div>}
+                <div className="faq-answer">
+                  <div className="faq-answer-content">
+                    <p>{a}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -154,7 +168,6 @@ export default function FrontendPageClient({
 }) {
   const founder = trainers.find(t => t.isFounder);
   const featuredTrainers = trainers.filter(t => !t.isFounder).slice(0, 3);
-  const allTrainers = founder ? [founder, ...featuredTrainers] : featuredTrainers;
 
   /* Scroll reveal */
   useEffect(() => {
@@ -173,6 +186,7 @@ export default function FrontendPageClient({
     <div className="noise-overlay">
       {/* ── HERO ── */}
       <section className="hero" id="top" aria-label="One Stop Fitness introduction" style={style}>
+        <div className="hero-ambient" aria-hidden="true" />
         <div className="hero-content">
           <div className="hero-kicker eyebrow">Lucknow&apos;s training ground · Est. {site.established}</div>
           <h1>
@@ -224,30 +238,30 @@ export default function FrontendPageClient({
               <div><div className="eyebrow">Limited time</div><h2 className="section-title">Active<br /><span style={{ color: "var(--lime)" }}>Offers.</span></h2></div>
               <p className="section-copy">Grab these deals before they expire and get started for less.</p>
             </div>
-            <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))" }}>
+            <div className="offer-grid">
               {offers.slice(0, 3).map(o => (
-                <div key={o.id} className="service-card" style={{ minHeight: 180, padding: 0, overflow: "hidden" }}>
+                <div key={o.id} className="offer-card" style={{ minHeight: 240 }}>
                   {o.imageUrl && (
-                    <div style={{ position: "relative", overflow: "hidden" }}>
+                    <div className="offer-banner">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={o.imageUrl} alt={o.title} style={{ width: "100%", height: "auto", objectFit: "cover", display: "block" }} />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(17,20,21,.85), transparent 55%)" }} />
+                      <img src={o.imageUrl} alt={o.title} />
+                      <div className="offer-banner-shade" />
                       {o.discountValue != null && (
-                        <span style={{ position: "absolute", top: 12, right: 12, background: "var(--lime)", color: "var(--ink)", padding: "4px 12px", fontSize: 10, fontFamily: "'Space Mono',monospace", fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase" }}>
+                        <span className="offer-badge">
                           {o.discountType === "PERCENT" ? `${o.discountValue}% OFF` : `₹${o.discountValue} OFF`}
                         </span>
                       )}
                     </div>
                   )}
-                  <div className="service-bottom" style={{ padding: o.imageUrl ? "24px 28px 26px" : undefined }}>
+                  <div className="offer-body">
                     {o.imageUrl == null && o.discountValue != null && (
-                      <span style={{ position: "absolute", top: 16, right: 16, background: "var(--lime)", color: "var(--ink)", padding: "4px 12px", fontSize: 10, fontFamily: "'Space Mono',monospace", fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase" }}>
+                      <span className="offer-badge offer-badge-floating">
                         {o.discountType === "PERCENT" ? `${o.discountValue}% OFF` : `₹${o.discountValue} OFF`}
                       </span>
                     )}
                     <h3>{o.title}</h3>
                     {o.description && <p>{o.description}</p>}
-                    {o.endDate && <p style={{ marginTop: 8, color: "var(--lime)", fontSize: 10, fontFamily: "'Space Mono',monospace", textTransform: "uppercase", letterSpacing: ".1em" }}>Valid till {fmtDate(o.endDate)}</p>}
+                    {o.endDate && <p className="offer-date">Valid till {fmtDate(o.endDate)}</p>}
                   </div>
                 </div>
               ))}
@@ -258,10 +272,13 @@ export default function FrontendPageClient({
 
       {/* ── STATS ── */}
       <section className="stats-grid">
-        {[["22","years of showing up",""],["06","days to make it count",""],["05","ways to train your way","+"],["01","standard: your best",""]].map(([n, l, s], i) => (
+        {stats.map((s, i) => (
           <div className="stat-cell" key={i}>
-            <strong>{n}<span>{s}</span></strong>
-            <label>{l}</label>
+            <strong>
+              <CountUp end={s.n} />
+              {s.s && <span>{s.s}</span>}
+            </strong>
+            <label>{s.label}</label>
           </div>
         ))}
       </section>
@@ -275,14 +292,16 @@ export default function FrontendPageClient({
           </div>
           <div className="why-grid">
             {[
-              { icon: <DumbbellIcon />, title: "High-tech equipment", copy: "The right tools, in the right condition, ready when you are." },
-              { icon: <UsersIcon />,    title: "Expert trainers",    copy: "Coaches who pay attention to your form, not just your reps." },
-              { icon: <TargetIcon />,   title: "Personalized plans", copy: "A clear path from where you are to where you want to be." },
-              { icon: <ZapIcon />,      title: "Group energy",      copy: "Class formats that turn a workout into the best hour of your day." },
-            ].map((item) => (
-              <article className="why-card" key={item.title}>
+              { icon: <DumbbellIcon />, title: "High-tech equipment", tag: "Built for progress", copy: "The right tools, in the right condition, ready when you are." },
+              { icon: <UsersIcon />,    title: "Expert trainers",    tag: "Front-row coaching", copy: "Coaches who pay attention to your form, not just your reps." },
+              { icon: <TargetIcon />,   title: "Personalized plans", tag: "Your own roadmap", copy: "A clear path from where you are to where you want to be." },
+              { icon: <ZapIcon />,      title: "Group energy",      tag: "Better together",  copy: "Class formats that turn a workout into the best hour of your day." },
+            ].map((item, i) => (
+              <article className="why-card why-in" key={item.title} style={{ animationDelay: `${i * 90}ms` }}>
+                <span className="why-index">0{i + 1}</span>
                 <div className="icon-box" aria-hidden="true">{item.icon}</div>
                 <h3>{item.title}</h3>
+                <p className="why-tag">{item.tag}</p>
                 <p>{item.copy}</p>
               </article>
             ))}
@@ -360,7 +379,7 @@ export default function FrontendPageClient({
                     <p>{plan.description}</p>
                     <div className="plan-price">₹{plan.price.toLocaleString("en-IN")}<small>/ month</small></div>
                     <ul>{plan.features.map(f => <li key={f}>{f}</li>)}</ul>
-                    <PayNowButton plan={{ id: plan.id, name: plan.name, price: plan.price }} />
+                    <PayNowButton plan={{ id: plan.id, name: plan.name, price: plan.price }} variant="light" />
                     <Link href={whatsappLink(msg)} target="_blank" rel="noreferrer" className={i === 1 ? "button-primary" : "button-outline"}>
                       Ask about this plan
                     </Link>
@@ -385,51 +404,31 @@ export default function FrontendPageClient({
               </div>
               <p className="section-copy">Join the challenge and earn your bragging rights.</p>
             </div>
-            <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))" }}>
+            <div className="competition-grid">
               {competitions.map(c => (
-                <div
-                  key={c.id}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    padding: c.bannerUrl ? 0 : "30px",
-                    background: "#161d1e",
-                    border: "1px solid rgba(236,232,220,.12)",
-                    position: "relative",
-                    minHeight: "250px",
-                    overflow: "hidden",
-                  }}
-                >
+                <div key={c.id} className="competition-card">
                   {c.bannerUrl && (
-                    <div style={{ position: "relative", height: 170, overflow: "hidden" }}>
+                    <div className="competition-banner">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={c.bannerUrl} alt={c.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(22,29,30,.9), transparent 55%)" }} />
+                      <img src={c.bannerUrl} alt={c.title} />
+                      <div className="competition-banner-shade" />
+                      <span className="competition-chip">
+                        <TrophyIcon size={14} /> Challenge
+                      </span>
                     </div>
                   )}
-                  <div style={{ padding: c.bannerUrl ? "22px 30px 26px" : undefined, display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                        <span style={{ color: "var(--lime)", display: "flex", alignItems: "center" }}>
-                          <TrophyIcon size={16} />
-                        </span>
-                        <span style={{ color: "var(--lime)", font: "700 11px 'Space Mono', monospace", letterSpacing: ".12em", textTransform: "uppercase" }}>
-                          CHALLENGE
-                        </span>
-                      </div>
-                      <h3 style={{ margin: "0 0 10px", color: "var(--paper)", font: "700 28px/1 'Barlow Condensed', sans-serif", textTransform: "uppercase" }}>
-                        {c.title}
-                      </h3>
-                      {c.description && (
-                        <p style={{ margin: 0, color: "#8a948e", fontSize: 13, lineHeight: 1.5 }}>
-                          {c.description}
-                        </p>
-                      )}
-                    </div>
-                    <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(236,232,220,.1)", display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 8, fontSize: 10, fontFamily: "'Space Mono',monospace", color: "var(--lime)" }}>
-                      <span>📅 {fmtDate(c.startDate)} → {fmtDate(c.endDate)}</span>
-                      <span>👥 {c._count.participants} registered{c.maxParticipants ? ` / ${c.maxParticipants}` : ""}</span>
+                  <div className="competition-body">
+                    <h3 className="competition-title">{c.title}</h3>
+                    {c.description && <p className="competition-desc">{c.description}</p>}
+                    <div className="competition-meta">
+                      <span className="competition-meta-item">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        {fmtDate(c.startDate)} → {fmtDate(c.endDate)}
+                      </span>
+                      <span className="competition-meta-item competition-meta-count">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        {c._count.participants} registered{c.maxParticipants ? ` / ${c.maxParticipants}` : ""}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -447,7 +446,7 @@ export default function FrontendPageClient({
               <div><div className="eyebrow">Inside One Stop</div><h2 className="section-title">A space with<br /><span style={{ color: "var(--lime)" }}>standards.</span></h2></div>
               <p className="section-copy">Dark mornings. Bright ideas. Every corner designed to keep your attention on the work.</p>
             </div>
-            <div className="gallery-grid">
+            <div className="gallery-grid gallery-scroller">
               {gallery.slice(0, 4).map((img, i) => (
                 <figure className="gallery-item" key={img.imageUrl + i}>
                   {img.mediaType === "VIDEO" ? (
@@ -463,7 +462,10 @@ export default function FrontendPageClient({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={img.imageUrl} alt={`${img.title} at One Stop Fitness`} />
                   )}
-                  <figcaption>{img.title} / 0{i + 1}</figcaption>
+                  <figcaption>
+                    <span>{img.title}</span>
+                    <small>0{i + 1}</small>
+                  </figcaption>
                 </figure>
               ))}
             </div>
@@ -475,11 +477,12 @@ export default function FrontendPageClient({
       {founder && (
         <section className="section-pad team-section">
           <div className="container-wide reveal">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
-              <div className="trainer-card" style={{ minHeight: 420 }}>
+            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-[60px]">
+              <div className="trainer-card founder-media">
                 {founder.profileImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={founder.profileImageUrl} alt={founder.name} />
+                  <ScrollZoom className="absolute inset-0">
+                    <img src={founder.profileImageUrl} alt={founder.name} />
+                  </ScrollZoom>
                 ) : (
                   <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", background: "rgba(200,255,40,.08)", fontSize: 96, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, color: "var(--lime)" }}>
                     {founder.name.charAt(0)}
@@ -515,29 +518,41 @@ export default function FrontendPageClient({
       )}
 
       {/* ── TRAINERS ── */}
-      {featuredTrainers.length > 0 && (
+      {trainers.length > 0 && (
         <section className="section-pad team-section">
           <div className="container-wide reveal">
-            <div className="split-heading">
+            <div className="split-heading" style={{ marginBottom: 40 }}>
               <div><div className="eyebrow">The people behind the push</div><h2 className="section-title">Good work<br /><span style={{ color: "var(--gold)" }}>needs guidance.</span></h2></div>
               <p className="section-copy">Our trainers bring experience, curiosity, and an eye for the small adjustment that changes everything.</p>
             </div>
-            <div className="team-grid">
-              {allTrainers.slice(0, 3).map(t => (
-                <article className="trainer-card" key={t.id}>
-                  {t.profileImageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={t.profileImageUrl} alt={`${t.name}, ${t.specialization} at One Stop Fitness`} />
-                  ) : (
-                    <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", background: "rgba(200,255,40,.08)", fontSize: 72, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, color: "var(--lime)" }}>
-                      {t.name.charAt(0)}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredTrainers.map((trainer, i) => (
+                <Reveal key={trainer.id} delay={i * 90} className="h-full">
+                  <div className="panel h-full p-6 text-center">
+                    <div className="relative mx-auto aspect-square w-full max-w-[170px] overflow-hidden rounded-full border-2 border-gym-lime/45 shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_0_26px_rgba(154,217,1,0.2)]">
+                      {trainer.profileImageUrl ? (
+                        <Image
+                          src={trainer.profileImageUrl}
+                          alt={trainer.name}
+                          fill
+                          sizes="170px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gym-lime/12 font-anton text-5xl text-gym-lime">
+                          {trainer.name.charAt(0)}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="trainer-info">
-                    <h3>{t.name}</h3>
-                    <p>{t.specialization}</p>
+                    <h3 className="font-anton mt-5 text-xl uppercase leading-tight text-white">
+                      {trainer.name}
+                    </h3>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-gym-lime">
+                      {trainer.specialization}
+                    </p>
+                    <p className="mt-3 text-sm text-white/55">{trainer.bio}</p>
                   </div>
-                </article>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -553,31 +568,41 @@ export default function FrontendPageClient({
       {/* ── CONTACT ── */}
       <section id="contact" className="section-pad contact-section">
         <div className="container-wide reveal">
-          <div className="split-heading">
+          <div className="split-heading contact-heading">
             <div><div className="eyebrow">Make your move</div><h2 className="section-title">The floor is<br /><span style={{ color: "var(--lime)" }}>waiting.</span></h2></div>
             <p className="section-copy">Drop in for a tour, ask a question, or make your first session official. Our team is ready.</p>
           </div>
           <div className="contact-layout">
             <div className="contact-list">
               <div className="contact-line">
-                <span style={{ color: "var(--lime)", display: "flex", marginTop: 2 }}><PinIcon /></span>
-                <div><small>Find us</small><strong>ONE STOP FITNESS CENTER<br />{site.address}</strong></div>
+                <span className="contact-icon"><PinIcon /></span>
+                <div>
+                  <small>Find us</small>
+                  <strong>{site.name}<br />{site.address}</strong>
+                </div>
               </div>
               <div className="contact-line">
-                <span style={{ color: "var(--lime)", display: "flex", marginTop: 2 }}><ClockIcon /></span>
-                <div><small>Open {site.hours.split("·")[0]}</small><strong>{site.hours.split("·")[1]?.trim()}</strong></div>
+                <span className="contact-icon"><ClockIcon /></span>
+                <div>
+                  <small>Open {site.hours.split("·")[0]}</small>
+                  <strong>{site.hours.split("·")[1]?.trim()}</strong>
+                </div>
               </div>
               <div className="contact-line">
-                <span style={{ color: "var(--lime)", display: "flex", marginTop: 2 }}><MessageIcon /></span>
-                <div><small>WhatsApp / enquiries</small><a href={`https://wa.me/${site.whatsappNumber}`} target="_blank" rel="noreferrer">{site.phoneDisplay}</a></div>
+                <span className="contact-icon"><MessageIcon /></span>
+                <div>
+                  <small>WhatsApp / enquiries</small>
+                  <a href={`https://wa.me/${site.whatsappNumber}`} target="_blank" rel="noreferrer">{site.phoneDisplay}</a>
+                </div>
               </div>
-              <Link href={whatsappLink("Hi ONE STOP FITNESS, I'd like to book a facility tour.")} target="_blank" rel="noreferrer" className="button-primary" style={{ width: "fit-content", marginTop: 10 }}>
+              <Link href={whatsappLink("Hi ONE STOP FITNESS, I'd like to book a facility tour.")} target="_blank" rel="noreferrer" className="button-primary contact-cta">
                 Book a facility tour
               </Link>
             </div>
-            <div style={{ position: "relative", minHeight: 390, borderRadius: 2, overflow: "hidden", border: "1px solid rgba(236,232,220,.14)" }}>
+
+            <div className="map-card">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3559.6!2d80.9334!3d26.8712!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399957ab671e1e3b%3A0x6e3b1e3b!2sSheela%20Garden%2C%20356%2FKC426%20A%2C%20Alamnagar%2C%20Rajajipuram%2C%20Lucknow%2C%20Uttar%20Pradesh%20226017!5e0!3m2!1sen!2sin!4v1"
+                src={site.mapsEmbed}
                 width="100%"
                 height="100%"
                 style={{ position: "absolute", inset: 0, border: 0, filter: "grayscale(1) contrast(1.1) invert(0.92)" }}
@@ -586,33 +611,13 @@ export default function FrontendPageClient({
                 referrerPolicy="no-referrer-when-downgrade"
                 title="ONE STOP FITNESS location — Sheela Garden, Rajajipuram, Lucknow"
               />
-              {/* Overlay label */}
-              <div style={{
-                position: "absolute", bottom: 0, left: 0, right: 0,
-                padding: "14px 18px",
-                background: "rgba(13,17,18,.88)",
-                backdropFilter: "blur(8px)",
-                borderTop: "1px solid rgba(236,232,220,.14)",
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-              }}>
-                <div>
-                  <strong style={{ display: "block", color: "var(--paper)", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 700, textTransform: "uppercase" }}>
-                    ONE STOP FITNESS
-                  </strong>
-                  <span style={{ color: "#788080", fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: ".08em", textTransform: "uppercase" }}>
-                    Rajajipuram, Lucknow · 226017
-                  </span>
-                </div>
-                <a
-                  href={site.mapsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="button-primary"
-                  style={{ fontSize: 10, padding: "0 14px", minHeight: 36, whiteSpace: "nowrap" }}
-                >
-                  Open in Maps ↗
-                </a>
+              <div className="map-caption">
+                <span className="map-caption-name">{site.name}</span>
+                <span className="map-caption-addr">Rajajipuram, Lucknow · 226017</span>
               </div>
+              <a href={site.mapsUrl} target="_blank" rel="noreferrer" className="map-open-btn">
+                Open in Maps ↗
+              </a>
             </div>
           </div>
         </div>

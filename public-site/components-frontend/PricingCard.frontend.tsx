@@ -27,8 +27,8 @@ export default function PricingCardFrontend({
 
   return (
     <div
-      className={`panel flex flex-col p-7 ${
-        featured ? "!border-gym-lime/45 shadow-[0_0_0_1px_rgba(154,217,1,0.14),0_0_44px_rgba(154,217,1,0.14)]" : ""
+      className={`panel flex flex-col p-7 active:scale-[0.98] ${
+        featured ? "!border-gym-lime/45 glow-pulse" : ""
       }`}
     >
       {tag && (

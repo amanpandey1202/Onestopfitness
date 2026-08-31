@@ -50,7 +50,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-bold transition active:scale-[0.96] disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gym-lime/70 focus-visible:ring-offset-2 focus-visible:ring-offset-gym-ink",
         styles,
         className
       )}
@@ -77,7 +77,7 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   return (
     <input
       className={cn(
-        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition focus:border-gym-lime",
+        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition focus:border-gym-lime focus:ring-2 focus:ring-gym-lime/25",
         className
       )}
       {...props}
@@ -89,7 +89,7 @@ export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
   return (
     <textarea
       className={cn(
-        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition focus:border-gym-lime",
+        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition focus:border-gym-lime focus:ring-2 focus:ring-gym-lime/25",
         className
       )}
       {...props}
@@ -101,7 +101,7 @@ export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectE
   return (
     <select
       className={cn(
-        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white outline-none transition focus:border-gym-lime",
+        "w-full rounded-md border border-white/15 bg-gym-black px-3 py-2 text-sm text-white outline-none transition focus:border-gym-lime focus:ring-2 focus:ring-gym-lime/25",
         className
       )}
       {...props}
@@ -147,7 +147,7 @@ export function Badge({ children, tone = "neutral" }: { children: ReactNode; ton
     green: "bg-gym-lime/15 text-gym-lime",
     red: "bg-red-500/15 text-red-300",
     yellow: "bg-yellow-500/15 text-yellow-300",
-    neutral: "bg-white/10 text-white/70",
+    neutral: "bg-white/15 text-white/85",
   };
   return (
     <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold", tones[tone])}>

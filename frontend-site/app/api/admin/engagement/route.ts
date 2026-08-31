@@ -36,15 +36,19 @@ export async function GET() {
 
     const members = await prisma.user.findMany({
       where: { role: Role.MEMBER },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        phone: true,
         memberships: {
           orderBy: { endDate: "desc" },
           take: 1,
-          include: { plan: true },
+          select: { status: true, endDate: true, plan: { select: { name: true } } },
         },
         attendance: {
           orderBy: { checkIn: "desc" },
           take: 1,
+          select: { checkIn: true },
         },
       },
     });
@@ -72,7 +76,7 @@ export async function GET() {
       if (membershipStatus === "ACTIVE" && daysUntilExpiry >= 0 && daysUntilExpiry <= 7) {
         alert = "expiry-soon";
       }
-      if (membershipStatus === "ACTIVE" && daysUntilExpiry < 0) {
+      if (membershipStatus === "EXPIRED") {
         alert = "expiry-crossed";
       }
       if (daysSinceLastCheckIn >= 14 && membershipStatus !== "EXPIRED") {

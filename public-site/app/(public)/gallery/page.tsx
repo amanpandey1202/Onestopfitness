@@ -1,6 +1,6 @@
 import Icon from "@/components/Icon";
 import SectionHeading from "@/components/SectionHeading";
-import GalleryCarousel from "@/components/GalleryCarousel";
+import GalleryExperience from "@/components/GalleryExperience";
 import { site } from "@/data/site";
 import { getPublishedGallery } from "@/lib/services/public";
 
@@ -26,7 +26,7 @@ export default async function GalleryPage() {
         />
 
         <div className="mt-12">
-          <GalleryCarousel items={gallery} />
+          <GalleryExperience items={gallery} />
         </div>
       </section>
 

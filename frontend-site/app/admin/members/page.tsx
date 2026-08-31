@@ -26,6 +26,7 @@ type Member = {
   memberCode: string | null;
   isActive: boolean;
   createdAt: string;
+  category: "member" | "new";
   memberProfile: {
     fitnessGoal: string | null;
     joiningDate: string | null;
@@ -53,6 +54,7 @@ export default function AdminMembersPage() {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "member" | "new">("all");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [assignTo, setAssignTo] = useState<Member | null>(null);
@@ -61,14 +63,16 @@ export default function AdminMembersPage() {
 
   const reload = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/members");
+      const params = new URLSearchParams();
+      if (categoryFilter !== "all") params.set("category", categoryFilter);
+      const res = await fetch(`/api/admin/members?${params.toString()}`);
       if (!res.ok) throw new Error("load failed");
       const data = await res.json();
       setMembers(data.members);
     } catch {
       setError("Couldn't load members.");
     }
-  }, []);
+  }, [categoryFilter]);
 
   useEffect(() => {
     reload();
@@ -76,6 +80,10 @@ export default function AdminMembersPage() {
       .then((r) => r.json())
       .then((d) => setPlans(d.plans ?? []))
       .catch(() => {});
+    // Allow the dashboard "Add Member" quick action (?new=1) to open the form.
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("new") === "1") {
+      setShowForm(true);
+    }
   }, [reload]);
 
   async function action(fn: () => Promise<Response>, onSuccess?: () => void) {
@@ -224,6 +232,28 @@ export default function AdminMembersPage() {
         />
       )}
 
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {(
+          [
+            { key: "all", label: "All" },
+            { key: "member", label: "Members" },
+            { key: "new", label: "New Registrations" },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setCategoryFilter(tab.key)}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+              categoryFilter === tab.key
+                ? "bg-gym-lime text-gym-ink"
+                : "border border-white/10 text-white/60 hover:border-gym-lime/40 hover:text-gym-lime"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-4 max-w-sm">
         <Input
           placeholder="Search name, email or phone…"
@@ -277,12 +307,16 @@ export default function AdminMembersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
-                        <Badge tone={m.isActive ? "green" : "red"}>
-                          {m.isActive ? "Active" : "Suspended"}
-                        </Badge>
-                        {latest && (
+                        <div className="flex items-center gap-1">
+                          <Badge tone={m.isActive ? "green" : "red"}>
+                            {m.isActive ? "Active" : "Suspended"}
+                          </Badge>
+                        </div>
+                        {m.category === "new" ? (
+                          <Badge tone="yellow">New Registration</Badge>
+                        ) : latest ? (
                           <Badge tone={active ? "green" : "yellow"}>{active ? "Paid" : "Expired"}</Badge>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                     <td className="hidden px-4 py-3 text-white/55 lg:table-cell">

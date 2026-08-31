@@ -26,9 +26,9 @@ export default function PricingCard({
 
   return (
     <div
-      className={`relative flex flex-col rounded-2xl border p-6 transition hover:-translate-y-1 ${
+      className={`relative flex flex-col rounded-2xl border p-6 transition hover:-translate-y-1 active:scale-[0.98] ${
         featured
-          ? "border-gym-lime bg-gradient-to-b from-gym-lime/15 to-transparent shadow-glow-sm"
+          ? "border-gym-lime bg-gradient-to-b from-gym-lime/15 to-transparent glow-pulse"
           : "border-white/10 bg-gym-ink shadow-card hover:border-gym-lime/50"
       }`}
     >

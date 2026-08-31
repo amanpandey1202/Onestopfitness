@@ -17,6 +17,13 @@ export default function MemberProfilePage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwNotice, setPwNotice] = useState<string | null>(null);
+  const [pwBusy, setPwBusy] = useState(false);
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
@@ -57,6 +64,34 @@ export default function MemberProfilePage() {
       setError(e instanceof Error ? e.message : "Save failed");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwError(null);
+    setPwNotice(null);
+    if (newPassword !== confirmPassword) {
+      setPwError("New passwords do not match.");
+      return;
+    }
+    setPwBusy(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Could not change your password.");
+      setPwNotice("Password changed");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (e) {
+      setPwError(e instanceof Error ? e.message : "Could not change your password.");
+    } finally {
+      setPwBusy(false);
     }
   }
 
@@ -109,6 +144,49 @@ export default function MemberProfilePage() {
           {notice && <p className="text-sm text-gym-lime">{notice}</p>}
           <Button type="submit" disabled={busy}>
             {busy ? "Saving…" : "Save Changes"}
+          </Button>
+        </form>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white">Change Password</h2>
+        <form onSubmit={changePassword} className="mt-4 space-y-4">
+          <Field label="Current password">
+            <Input
+              type="password"
+              required
+              autoComplete="current-password"
+              placeholder="••••••••"
+              minLength={1}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+          </Field>
+          <Field label="New password" hint="Minimum 8 characters, with a letter, number and special character.">
+            <Input
+              type="password"
+              required
+              autoComplete="new-password"
+              placeholder="••••••••"
+              minLength={8}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </Field>
+          <Field label="Confirm new password">
+            <Input
+              type="password"
+              required
+              autoComplete="new-password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </Field>
+          {pwError && <p className="text-sm text-red-300">{pwError}</p>}
+          {pwNotice && <p className="text-sm text-gym-lime">{pwNotice}</p>}
+          <Button type="submit" disabled={pwBusy}>
+            {pwBusy ? "Updating…" : "Update Password"}
           </Button>
         </form>
       </Card>

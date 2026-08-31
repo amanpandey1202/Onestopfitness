@@ -31,12 +31,12 @@ export default function PageHeroFrontend({
         }}
       />
       <div className="relative z-10 mx-auto max-w-5xl px-4 py-16 text-center sm:px-6 sm:py-20">
-        <p className="kicker kicker-center mx-auto">{kicker}</p>
-        <h1 className="font-anton mt-6 uppercase leading-[0.9] text-white sm:text-6xl text-5xl">
+        <p className="kicker kicker-center r-enter mx-auto">{kicker}</p>
+        <h1 className="font-anton r-enter r-enter-1 mt-6 uppercase leading-[0.9] text-white sm:text-6xl text-5xl">
           {title}
         </h1>
         {subtitle && (
-          <p className="mx-auto mt-5 max-w-2xl text-[0.95rem] text-white/60">{subtitle}</p>
+          <p className="r-enter r-enter-2 mx-auto mt-5 max-w-2xl text-[0.95rem] text-white/60">{subtitle}</p>
         )}
       </div>
     </section>

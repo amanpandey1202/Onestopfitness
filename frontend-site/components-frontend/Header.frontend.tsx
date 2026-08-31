@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { site, whatsappLink } from "@/data/site";
 
 // Inline SVG icons — no external dependency
@@ -16,14 +16,31 @@ const links = [
   ["Gallery",  "/#gallery"],
   ["FAQ",      "/#faq"],
   ["Contact",  "/#contact"],
-];
+].map(([label, href]) => ({ label, href, id: href.split("#")[1] }));
 
 export default function HeaderFrontend() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState("");
   const wa = whatsappLink("Hi ONE STOP FITNESS, I'd like to join.");
 
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 24);
+      let current = "";
+      for (const { id } of links) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top - 110 <= 0) current = id;
+      }
+      setActive(current);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className="site-nav">
+    <header className={`site-nav${scrolled ? " site-nav-scrolled" : ""}`}>
       <div className="container-wide nav-inner">
         {/* Brand */}
         <Link href="/#top" className="brand-lockup" style={{ textDecoration: "none" }}>
@@ -36,8 +53,8 @@ export default function HeaderFrontend() {
 
         {/* Desktop nav */}
         <nav className="nav-links" aria-label="Primary navigation">
-          {links.map(([label, href]) => (
-            <Link key={href} href={href}>
+          {links.map(({ label, href, id }) => (
+            <Link key={href} href={href} className={active === id ? "active" : ""}>
               {label}
             </Link>
           ))}
@@ -72,8 +89,8 @@ export default function HeaderFrontend() {
       {/* Mobile drawer */}
       {open && (
         <nav className="mobile-nav" aria-label="Mobile navigation">
-          {links.map(([label, href]) => (
-            <Link key={href} href={href} onClick={() => setOpen(false)}>
+          {links.map(({ label, href, id }) => (
+            <Link key={href} href={href} className={active === id ? "active" : ""} onClick={() => setOpen(false)}>
               {label}
             </Link>
           ))}

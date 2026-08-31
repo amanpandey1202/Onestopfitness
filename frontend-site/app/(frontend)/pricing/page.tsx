@@ -1,6 +1,7 @@
 import PageHeroFrontend from "@/components-frontend/PageHero.frontend";
 import PricingCardFrontend from "@/components-frontend/PricingCard.frontend";
 import WhatsAppButtonFrontend from "@/components-frontend/WhatsAppButton.frontend";
+import Reveal from "@/components/Reveal";
 import { getActivePlans } from "@/lib/services/public";
 
 export const metadata = {
@@ -30,18 +31,20 @@ export default async function FrontendPricingPage() {
         ) : (
           <div className="mt-2 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan, i) => (
-              <PricingCardFrontend
-                key={plan.id}
-                plan={plan}
-                featured={i === 1}
-                tag={i === 1 ? "Most Popular" : undefined}
-              />
+              <Reveal key={plan.id} delay={i * 90} className="h-full">
+                <PricingCardFrontend
+                  plan={plan}
+                  featured={i === 1}
+                  tag={i === 1 ? "Most Popular" : undefined}
+                />
+              </Reveal>
             ))}
           </div>
         )}
 
         {/* NOTE */}
-        <div className="panel mt-14 overflow-hidden p-8 text-center sm:p-10">
+        <Reveal delay={140}>
+          <div className="panel mt-14 overflow-hidden p-8 text-center sm:p-10">
           <div className="pointer-events-none absolute -top-20 left-1/2 h-40 w-96 -translate-x-1/2 rounded-full bg-gym-lime/12 blur-3xl" />
           <h3 className="font-anton relative text-3xl uppercase leading-none text-gym-lime">
             Want a custom plan?
@@ -54,6 +57,7 @@ export default async function FrontendPricingPage() {
             <WhatsAppButtonFrontend label="Ask About Custom Plans" />
           </div>
         </div>
+        </Reveal>
       </section>
     </>
   );

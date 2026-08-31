@@ -3,6 +3,8 @@ import PageHeroFrontend from "@/components-frontend/PageHero.frontend";
 import SectionHeadingFrontend from "@/components-frontend/SectionHeading.frontend";
 import WhatsAppButtonFrontend from "@/components-frontend/WhatsAppButton.frontend";
 import Icon from "@/components-frontend/Icons.frontend";
+import Reveal from "@/components/Reveal";
+import ScrollZoom from "@/components/ScrollZoom";
 import { site } from "@/data/site";
 import { getPublishedTrainers } from "@/lib/services/public";
 
@@ -42,17 +44,19 @@ export default async function FrontendAboutPage() {
 
       {/* HISTORY */}
       <section className="section mx-auto max-w-7xl">
-        <div className="mx-auto max-w-3xl space-y-5 text-center text-white/65">
-          <p>
-            {site.name} has been a trailblazer in Lucknow&apos;s fitness
-            industry since {site.established}. What began as a passion grew into
-            a community — a place where champions are made and every member is
-            treated like family.
-          </p>
-          <p className="font-anton text-2xl uppercase leading-none text-gym-lime">
-            {site.mission}.
-          </p>
-        </div>
+        <Reveal>
+          <div className="mx-auto max-w-3xl space-y-5 text-center text-white/65">
+            <p>
+              {site.name} has been a trailblazer in Lucknow&apos;s fitness
+              industry since {site.established}. What began as a passion grew into
+              a community — a place where champions are made and every member is
+              treated like family.
+            </p>
+            <p className="font-anton text-2xl uppercase leading-none text-gym-lime">
+              {site.mission}.
+            </p>
+          </div>
+        </Reveal>
       </section>
 
       {/* FOUNDER */}
@@ -62,13 +66,15 @@ export default async function FrontendAboutPage() {
             <div className="relative mx-auto w-full max-w-sm">
               <div className="hero-frame aspect-square">
                 {founder.profileImageUrl ? (
-                  <Image
-                    src={founder.profileImageUrl}
-                    alt={`${founder.name} — Founder of ${site.name}`}
-                    fill
-                    sizes="(min-width:1024px) 33vw, 100vw"
-                    className="object-cover"
-                  />
+                  <ScrollZoom className="absolute inset-0">
+                    <Image
+                      src={founder.profileImageUrl}
+                      alt={`${founder.name} — Founder of ${site.name}`}
+                      fill
+                      sizes="(min-width:1024px) 33vw, 100vw"
+                      className="object-cover"
+                    />
+                  </ScrollZoom>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-gym-lime/10 font-anton text-8xl text-gym-lime">
                     {founder.name.charAt(0)}
@@ -76,7 +82,8 @@ export default async function FrontendAboutPage() {
                 )}
               </div>
             </div>
-            <div>
+            <Reveal as="div" variant="right" delay={120}>
+              <div>
               <p className="kicker">The Founder</p>
               <h2 className="font-anton mt-5 text-5xl uppercase leading-[0.9] text-white">
                 {founder.name}
@@ -109,6 +116,7 @@ export default async function FrontendAboutPage() {
                 </p>
               )}
             </div>
+            </Reveal>
           </div>
         </section>
       )}
@@ -122,8 +130,9 @@ export default async function FrontendAboutPage() {
             subtitle="Experienced, certified and genuinely invested in your progress."
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {team.map((trainer) => (
-              <div key={trainer.id} className="panel p-7 text-center">
+            {team.map((trainer, i) => (
+              <Reveal key={trainer.id} delay={i * 80} className="h-full">
+                <div className="panel h-full p-7 text-center">
                 <div className="relative mx-auto aspect-square w-full max-w-[190px] overflow-hidden rounded-full border-2 border-gym-lime/45 shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_0_26px_rgba(154,217,1,0.2)]">
                   {trainer.profileImageUrl ? (
                     <Image
@@ -152,6 +161,7 @@ export default async function FrontendAboutPage() {
                 )}
                 <p className="mt-3 text-sm text-white/55">{trainer.bio}</p>
               </div>
+              </Reveal>
             ))}
           </div>
         </section>
@@ -159,7 +169,8 @@ export default async function FrontendAboutPage() {
 
       {/* CTA */}
       <section className="border-t border-white/10 bg-[#0c0c0c]">
-        <div className="section mx-auto max-w-7xl text-center">
+        <Reveal>
+          <div className="section mx-auto max-w-7xl text-center">
           <h2 className="font-anton uppercase leading-[0.9] text-white sm:text-5xl text-4xl">
             Train With Us <span className="glow-lime">Today</span>
           </h2>
@@ -168,6 +179,7 @@ export default async function FrontendAboutPage() {
             <WhatsAppButtonFrontend label="Book a Trial Visit" />
           </div>
         </div>
+        </Reveal>
       </section>
     </>
   );

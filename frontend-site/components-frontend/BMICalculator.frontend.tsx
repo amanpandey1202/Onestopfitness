@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import CountUp from "@/components/CountUp";
 
 export default function BMICalculatorFrontend() {
   const [height, setHeight] = useState("");
@@ -85,9 +86,11 @@ export default function BMICalculatorFrontend() {
       </form>
 
       {result && (
-        <div className="mt-5 rounded-xl border border-gym-lime/25 bg-[#0a0a0a] p-5 text-center shadow-[0_0_24px_rgba(154,217,1,0.08)]">
+        <div className="mt-5 r-enter rounded-xl border border-gym-lime/25 bg-[#0a0a0a] p-5 text-center shadow-[0_0_24px_rgba(154,217,1,0.08)]">
           <p className="text-xs uppercase tracking-[0.25em] text-white/50">Your BMI</p>
-          <p className="stat-num mt-1 text-5xl">{result.bmi}</p>
+          <p className="stat-num mt-1 text-5xl">
+            <CountUp end={result.bmi} decimals={1} duration={900} />
+          </p>
           <p className={`mt-1.5 text-sm font-bold uppercase tracking-[0.2em] ${result.color}`}>
             {result.category}
           </p>

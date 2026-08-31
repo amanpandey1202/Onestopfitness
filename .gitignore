@@ -38,3 +38,7 @@ next-env.d.ts
 Thumbs.db
 .vscode/
 .idea/
+
+# Scratch / local dev helpers (not part of the app)
+scratch/
+**/scratch/

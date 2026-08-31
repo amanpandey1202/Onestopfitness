@@ -57,6 +57,9 @@ export default function AdminOffersPage() {
 
   useEffect(() => {
     reload();
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("new") === "1") {
+      setShowForm(true);
+    }
   }, [reload]);
 
   async function action(fn: () => Promise<Response>) {

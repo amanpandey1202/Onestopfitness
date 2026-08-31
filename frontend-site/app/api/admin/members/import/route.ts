@@ -247,6 +247,12 @@ export async function POST(req: NextRequest) {
         const existing = await prisma.user.findUnique({ where: { email: emailValue } });
 
         if (existing) {
+          // Never touch admin/trainer accounts via a member import — that would
+          // overwrite staff names and attach member PII to their account.
+          if (existing.role !== Role.MEMBER) {
+            errors.push(`Row ${line}: ${nameValue} — email belongs to a ${existing.role.toLowerCase()} account; skipped`);
+            continue;
+          }
           await prisma.user.update({
             where: { id: existing.id },
             data: {

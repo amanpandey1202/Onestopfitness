@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
       ];
     }
 
+    // Summary reflects the applied filters (search/status/method), so the KPI
+    // cards stay consistent with the table below them.
     const [payments, aggregateTotal, aggregateOnline, aggregateCash, aggregateExcel] =
       await Promise.all([
         prisma.payment.findMany({
@@ -49,19 +51,19 @@ export async function GET(req: NextRequest) {
           take: 100,
         }),
         prisma.payment.aggregate({
-          where: { status: "PAID" },
+          where: { ...where, status: "PAID" },
           _sum: { amount: true },
         }),
         prisma.payment.aggregate({
-          where: { status: "PAID", method: { in: ["RAZORPAY", "ONLINE"] } },
+          where: { ...where, status: "PAID", method: { in: ["RAZORPAY", "ONLINE"] } },
           _sum: { amount: true },
         }),
         prisma.payment.aggregate({
-          where: { status: "PAID", method: { in: ["CASH", "UPI", "CHEQUE", "BANK_TRANSFER", "MANUAL"] } },
+          where: { ...where, status: "PAID", method: { in: ["CASH", "UPI", "CHEQUE", "BANK_TRANSFER", "MANUAL"] } },
           _sum: { amount: true },
         }),
         prisma.payment.aggregate({
-          where: { status: "PAID", method: "EXCEL_IMPORT" },
+          where: { ...where, status: "PAID", method: "EXCEL_IMPORT" },
           _sum: { amount: true },
         }),
       ]);
@@ -97,36 +99,59 @@ export async function POST(req: NextRequest) {
     const now = new Date();
     const paidAt = data.paidAt ? new Date(data.paidAt) : now;
 
-    // Extend or create membership
-    const existingActive = await prisma.membership.findFirst({
-      where: { memberId: member.id, status: "ACTIVE", endDate: { gte: now } },
-      orderBy: { endDate: "desc" },
+    // Duration granted scales with the amount actually collected: a partial
+    // payment must not extend a full plan duration. Full price ⇒ full duration;
+    // otherwise grant a proportional number of days (min 1).
+    const fullDays = plan.durationDays;
+    const daysGranted =
+      data.amount >= plan.price
+        ? fullDays
+        : Math.max(1, Math.floor((data.amount / plan.price) * fullDays));
+
+    // Extend or create membership atomically (transaction guards against two
+    // concurrent POSTs both extending the same base end date).
+    const membership = await prisma.$transaction(async (tx) => {
+      const existingActive = await tx.membership.findFirst({
+        where: { memberId: member.id, status: "ACTIVE", endDate: { gte: now } },
+        orderBy: { endDate: "desc" },
+      });
+
+      let startDate: Date;
+      let endDate: Date;
+      let m: { id: string };
+
+      if (existingActive) {
+        startDate = existingActive.startDate;
+        endDate =
+          daysGranted === fullDays
+            ? computeMembershipEndDate(existingActive.endDate, fullDays)
+            : new Date(existingActive.endDate.getTime() + daysGranted * 86_400_000);
+        m = await tx.membership.update({
+          where: { id: existingActive.id },
+          data: { endDate },
+        });
+      } else {
+        startDate = paidAt;
+        endDate =
+          daysGranted === fullDays
+            ? computeMembershipEndDate(startDate, fullDays)
+            : new Date(startDate.getTime() + daysGranted * 86_400_000);
+        m = await tx.membership.create({
+          data: {
+            memberId: member.id,
+            planId: plan.id,
+            startDate,
+            endDate,
+            status: "ACTIVE",
+          },
+        });
+      }
+
+      return { ...m, startDate, endDate };
     });
 
-    let startDate: Date;
-    let endDate: Date;
-    let membership;
-
-    if (existingActive) {
-      startDate = existingActive.startDate;
-      endDate = computeMembershipEndDate(existingActive.endDate, plan.durationDays);
-      membership = await prisma.membership.update({
-        where: { id: existingActive.id },
-        data: { endDate },
-      });
-    } else {
-      startDate = paidAt;
-      endDate = computeMembershipEndDate(startDate, plan.durationDays);
-      membership = await prisma.membership.create({
-        data: {
-          memberId: member.id,
-          planId: plan.id,
-          startDate,
-          endDate,
-          status: "ACTIVE",
-        },
-      });
-    }
+    const startDate = membership.startDate;
+    const endDate = membership.endDate;
 
     const orderId = `manual_${member.id.slice(-6)}_${Date.now()}`;
     const paymentId = `pay_manual_${Date.now()}`;

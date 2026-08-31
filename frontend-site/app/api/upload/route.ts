@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/rbac";
-import { getStorage, validateUpload } from "@/lib/storage";
+import { getStorage, validateUpload, assertUploadContent } from "@/lib/storage";
 import { fail } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 
@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
     const type = validateUpload({ name: file.name, size: file.size });
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    assertUploadContent(type, buffer);
+
     const folder = (form.get("folder") as string) || "misc";
     const storage = getStorage();
     const stored = await storage.save(buffer, file.name, folder);
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest) {
     await logAudit(admin.id, "UPLOAD_FILE", "Storage", null, { url: stored.url });
     return NextResponse.json({ ...stored, type }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && /^(Unsupported|File too large)/.test(error.message)) {
+    if (error instanceof Error && /^(Unsupported|File too large|Rejected)/.test(error.message)) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return fail(error);

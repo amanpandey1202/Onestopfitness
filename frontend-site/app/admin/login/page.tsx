@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import { Button, Field, Input } from "@/components/admin/ui";
+import Link from "next/link";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +22,7 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe: remember }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
@@ -52,7 +54,7 @@ export default function AdminLoginPage() {
           <h1 className="font-anton text-4xl md:text-5xl lg:text-6xl font-bold italic text-white drop-shadow-2xl">BE YOUR BEST</h1>
           <p className="mt-4 max-w-md text-lg text-white/80">Cardio · Weight Training · Martial Arts · Personal Training.</p>
           {/* Login form overlay */}
-          <div className="relative mt-12 w-full max-w-md bg-white/5 backdrop-blur-sm rounded-xl p-8" style={{zIndex: 10}}>
+          <div className="panel r-enter r-enter-2 relative mt-12 w-full max-w-md p-8" style={{zIndex: 10}}>
             <form onSubmit={onSubmit} className="space-y-4">
               <Field label="Email">
                 <Input
@@ -74,6 +76,20 @@ export default function AdminLoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </Field>
+              <div className="flex items-center justify-between">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-white/70">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="h-4 w-4 accent-[#9ad901]"
+                  />
+                  Remember me
+                </label>
+                <Link href="/forgot-password" className="text-sm text-white/60 hover:text-gym-lime hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               {error && <p className="text-sm text-red-300">{error}</p>}
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Signing in…" : "Sign In"}

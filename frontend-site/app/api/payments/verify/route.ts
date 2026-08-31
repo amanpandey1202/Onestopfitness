@@ -11,7 +11,6 @@ const bodySchema = z.object({
   orderId: z.string().min(1),
   paymentId: z.string().optional(),
   signature: z.string().optional(),
-  isTestMode: z.boolean().optional(),
 });
 
 /**
@@ -43,7 +42,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const isTest = data.isTestMode || payment.method === "TEST_MODE" || !razorpayConfigured();
+    // Test-mode is derived purely from server-side state: the order must have
+    // been created as a TEST_MODE order AND Razorpay must genuinely be
+    // unconfigured. It is NEVER controlled by the client (prevents free-membership
+    // exploits where a caller flips a client-supplied isTestMode flag).
+    const isTest = payment.method === "TEST_MODE" && !razorpayConfigured();
 
     if (!isTest) {
       if (!data.paymentId || !data.signature) {

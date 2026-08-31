@@ -1,6 +1,7 @@
 import SectionHeading from "@/components/SectionHeading";
 import PricingCard from "@/components/PricingCard";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import Reveal from "@/components/Reveal";
 import { getActivePlans } from "@/lib/services/public";
 
 export const metadata = {
@@ -31,29 +32,32 @@ export default async function PricingPage() {
         ) : (
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan, i) => (
-              <PricingCard
-                key={plan.id}
-                plan={plan}
-                featured={i === 1}
-                tag={i === 1 ? "Most Popular" : undefined}
-              />
+              <Reveal key={plan.id} delay={i * 100} className="h-full">
+                <PricingCard
+                  plan={plan}
+                  featured={i === 1}
+                  tag={i === 1 ? "Most Popular" : undefined}
+                />
+              </Reveal>
             ))}
           </div>
         )}
 
         {/* NOTE */}
-        <div className="mt-12 rounded-2xl border border-gym-lime/40 bg-gym-lime/10 p-6 text-center">
-          <h3 className="font-display text-lg font-bold uppercase tracking-wide text-gym-lime">
-            Want a custom plan?
-          </h3>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-white/70">
-            Monthly, quarterly or yearly? Group classes with your plan? Message
-            us and we&apos;ll build the best combination for you.
-          </p>
-          <div className="mt-5 flex justify-center">
-            <WhatsAppButton label="Ask About Custom Plans" />
+        <Reveal delay={100}>
+          <div className="mt-12 rounded-2xl border border-gym-lime/40 bg-gym-lime/10 p-6 text-center transition hover:border-gym-lime/70 active:scale-[0.99]">
+            <h3 className="font-display text-lg font-bold uppercase tracking-wide text-gym-lime">
+              Want a custom plan?
+            </h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-white/70">
+              Monthly, quarterly or yearly? Group classes with your plan? Message
+              us and we&apos;ll build the best combination for you.
+            </p>
+            <div className="mt-5 flex justify-center">
+              <WhatsAppButton label="Ask About Custom Plans" />
+            </div>
           </div>
-        </div>
+        </Reveal>
       </section>
     </>
   );

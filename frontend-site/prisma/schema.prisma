@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -52,6 +52,15 @@ model User {
   // QR check-in: each member gets a unique, stable token embedded in their QR.
   // The token is set on first use / on register. Never changes unless admin resets.
   qrToken         String?  @unique
+  // Email verification: timestamp when the user confirmed their email.
+  // Null until verified (self-registered accounts only).
+  emailVerified   DateTime?
+  // Password reset: one-time token + expiry for the forgot-password link.
+  resetToken      String?
+  resetTokenExpires DateTime?
+  // Email verification: one-time token + expiry (separate from reset).
+  verifyToken     String?
+  verifyTokenExpires DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

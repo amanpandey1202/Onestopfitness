@@ -65,6 +65,43 @@ export async function sendWelcomeEmail(to: string, name: string, memberCode?: st
   return sendEmail({ to, subject: "Welcome to ONE STOP FITNESS! 💪", html });
 }
 
+export function baseUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL || `http://localhost:${process.env.PORT || 3000}`;
+}
+
+export async function sendVerificationEmail(to: string, token: string) {
+  const link = `${baseUrl()}/verify-email?token=${token}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0c0c0c; color: #ffffff; padding: 30px; border-radius: 12px;">
+      <h1 style="color: #9AD901; text-transform: uppercase; margin-bottom: 5px;">ONE STOP FITNESS</h1>
+      <p style="color: #888; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 0;">Confirm Your Email</p>
+      <hr style="border: 0; border-top: 1px solid #222; margin: 20px 0;" />
+      <p>Hi there,</p>
+      <p>Confirm that this email address belongs to you so you can activate your One Stop Fitness membership account. This link expires in <strong>24 hours</strong>.</p>
+      <p style="margin-top: 30px;"><a href="${link}" style="background: #9AD901; color: #000; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;">Verify my email</a></p>
+      <p style="color: #888; font-size: 12px;">If the button doesn't work, copy this link: ${link}</p>
+    </div>
+  `;
+  return sendEmail({ to, subject: "Confirm your One Stop Fitness email ✉️", html });
+}
+
+export async function sendPasswordResetEmail(to: string, name: string, token: string) {
+  const link = `${baseUrl()}/reset-password?token=${token}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0c0c0c; color: #ffffff; padding: 30px; border-radius: 12px;">
+      <h1 style="color: #9AD901; text-transform: uppercase; margin-bottom: 5px;">ONE STOP FITNESS</h1>
+      <p style="color: #888; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 0;">Password Reset</p>
+      <hr style="border: 0; border-top: 1px solid #222; margin: 20px 0;" />
+      <p>Hi <strong>${name}</strong>,</p>
+      <p>We received a request to reset your password. Click below to choose a new one. This link expires in <strong>30 minutes</strong>.</p>
+      <p style="margin-top: 30px;"><a href="${link}" style="background: #9AD901; color: #000; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;">Reset my password</a></p>
+      <p style="color: #888; font-size: 12px;">If you didn't ask for this, you can safely ignore this email. Your password won't change.</p>
+      <p style="color: #888; font-size: 12px;">Or copy this link: ${link}</p>
+    </div>
+  `;
+  return sendEmail({ to, subject: "Reset your One Stop Fitness password 🔐", html });
+}
+
 export async function sendExpiryWarningEmail(to: string, name: string, planName: string, daysLeft: number) {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0c0c0c; color: #ffffff; padding: 30px; border-radius: 12px;">
