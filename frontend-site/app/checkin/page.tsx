@@ -4,6 +4,7 @@
  * Works without a token so it never shows a broken state.
  */
 import Link from "next/link";
+import { site, brandParts } from "@/data/site";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default function CheckinLandingPage() {
     <div className="flex min-h-screen items-center justify-center bg-gym-black px-4">
       <div className="w-full max-w-sm text-center">
         <p className="font-anton text-xl uppercase tracking-widest text-white">
-          ONE STOP <span className="text-gym-lime">FITNESS</span>
+          {brandParts().word1} <span className="text-gym-lime">{brandParts().word2}</span>
         </p>
 
         <div className="mt-10 rounded-2xl border border-gym-lime/30 bg-gym-ink p-8">
@@ -36,7 +37,7 @@ export default function CheckinLandingPage() {
         </div>
 
         <p className="mt-8 text-xs text-white/25">
-          ONE STOP FITNESS · Scan your personal QR to check in
+          {site.name} · Scan your personal QR to check in
         </p>
       </div>
     </div>

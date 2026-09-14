@@ -2,12 +2,12 @@ export type Faq = {
   question: string;
   answer: string;
 };
+import { site } from "@/data/site";
 
 export const faqs: Faq[] = [
   {
-    question: "Where is ONE STOP FITNESS located?",
-    answer:
-      "We're at Sheela Garden, 356/KC426 A, Alamnagar, Rajajipuram, Lucknow, Uttar Pradesh 226017. You can find us on the map on our Contact page.",
+    question: site.faqLocationQuestion,
+    answer: site.faqLocationAnswer,
   },
   {
     question: "What are your timings?",
@@ -17,7 +17,7 @@ export const faqs: Faq[] = [
   {
     question: "How much does the membership cost?",
     answer:
-      "Cardio is ₹1500/month, Weight Training is ₹1000/month, Martial Arts is ₹1200/month and the Combo (Cardio + Weight) is ₹2200/month. Personal Training is ₹2000/month. Tap 'Ask Price on WhatsApp' and we'll confirm the latest offers for you.",
+      "Prices vary based on the program (Cardio, Weight Training, Martial Arts, etc.) and duration. Tap 'Ask Price on WhatsApp' and we'll confirm the latest offers and plans for you.",
   },
   {
     question: "Do you offer personal training?",

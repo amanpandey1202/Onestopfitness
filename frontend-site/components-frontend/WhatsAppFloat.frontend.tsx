@@ -1,4 +1,4 @@
-import { whatsappLink } from "@/data/site";
+import { site, whatsappLink } from "@/data/site";
 
 /**
  * Floating WhatsApp button (bottom-right) using Replit's exact CSS class.
@@ -9,7 +9,7 @@ export default function WhatsAppFloatFrontend() {
       href={whatsappLink()}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Chat with One Stop Fitness on WhatsApp"
+      aria-label={`Chat with ${site.name} on WhatsApp`}
       className="whatsapp-float"
     >
       {/* WhatsApp icon inline so no icon dependency needed */}

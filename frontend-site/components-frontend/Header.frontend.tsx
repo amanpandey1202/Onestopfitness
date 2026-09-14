@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { site, whatsappLink } from "@/data/site";
+import { site, whatsappLink, brandParts } from "@/data/site";
 
 // Inline SVG icons — no external dependency
 const ArrowR = () => <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>;
@@ -22,7 +22,7 @@ export default function HeaderFrontend() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("");
-  const wa = whatsappLink("Hi ONE STOP FITNESS, I'd like to join.");
+  const wa = whatsappLink(site.messages.joinMessage);
 
   useEffect(() => {
     const onScroll = () => {
@@ -44,10 +44,10 @@ export default function HeaderFrontend() {
       <div className="container-wide nav-inner">
         {/* Brand */}
         <Link href="/#top" className="brand-lockup" style={{ textDecoration: "none" }}>
-          <span className="brand-mark">O</span>
+          <span className="brand-mark">{brandParts().word1.charAt(0)}</span>
           <span>
-            <span className="brand-word">ONE STOP</span>
-            <span className="brand-sub">FITNESS CENTER · LUCKNOW</span>
+            <span className="brand-word">{brandParts().word1} {brandParts().word2}</span>
+            <span className="brand-sub">{site.subtitle}</span>
           </span>
         </Link>
 

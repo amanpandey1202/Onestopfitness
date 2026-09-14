@@ -1,17 +1,20 @@
 "use client";
+import { useEffect } from "react";
 import Link from "next/link";
+import { brandParts } from "@/data/site";
 
 export default function CheckinError({
   error,
-  reset,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gym-black px-4 text-center text-white">
       <p className="font-anton text-xl uppercase tracking-widest">
-        ONE STOP <span className="text-gym-lime">FITNESS</span>
+        {brandParts().word1} <span className="text-gym-lime">{brandParts().word2}</span>
       </p>
       <h1 className="mt-6 font-anton text-3xl uppercase text-gym-lime">Check-in error</h1>
       <p className="mt-3 max-w-md text-sm text-white/60">

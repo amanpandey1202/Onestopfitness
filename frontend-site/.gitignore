@@ -27,3 +27,18 @@ next-env.d.ts
 
 # vercel
 .vercel
+
+.vercel
+
+# runtime logs & local sqlite databases (PII)
+*.log
+dev.err
+prisma/*.db*
+prisma/**/*.db*
+
+# device-seed user uploads (member/trainer/testimonial photos)
+/public/uploads/
+
+# ad-hoc dev utility scripts
+/_count.js
+/unsuspend.js

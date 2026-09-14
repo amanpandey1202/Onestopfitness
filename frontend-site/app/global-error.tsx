@@ -1,4 +1,6 @@
 "use client";
+import { useEffect } from "react";
+import { site } from "@/data/site";
 
 export default function GlobalError({
   error,
@@ -7,6 +9,9 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
   return (
     <html lang="en">
       <body
@@ -23,7 +28,7 @@ export default function GlobalError({
       >
         <div style={{ textAlign: "center" }}>
           <h1 style={{ fontFamily: "Impact, sans-serif", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            ONE STOP FITNESS
+            {site.name}
           </h1>
           <p style={{ marginTop: 12 }}>
             Something went wrong.{" "}

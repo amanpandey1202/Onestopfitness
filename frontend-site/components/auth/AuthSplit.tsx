@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import Icon from "@/components/Icon";
+import { site, brandParts, establishedLine, copyrightLine } from "@/data/site";
 
 /**
  * Bold premium split for every login screen:
@@ -40,22 +41,22 @@ export default function AuthSplit({ children }: { children: ReactNode }) {
               <Icon name="dumbbell" className="h-5 w-5" />
             </span>
             <span className="font-anton text-lg uppercase tracking-wide text-white">
-              ONE STOP<span className="glow-lime">&nbsp;FITNESS</span>
+              {brandParts().word1}<span className="glow-lime">&nbsp;{brandParts().word2}</span>
             </span>
           </Link>
 
           <div>
-            <p className="kicker">Lucknow&apos;s Premium Fitness Center</p>
+            <p className="kicker">{site.auth.loginKicker}</p>
             <h1 className="font-anton mt-5 text-[clamp(3rem,6vw,5rem)] uppercase leading-[0.9] text-white">
-              <span className="block">BE YOUR</span>
-              <span className="glow-lime block">BEST</span>
+              <span className="block">{site.tagline.substring(0, site.tagline.lastIndexOf(' '))}</span>
+              <span className="glow-lime block">{site.tagline.substring(site.tagline.lastIndexOf(' ') + 1)}</span>
             </h1>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/55">
-              Cardio · Weight Training · Martial Arts · Personal Training.
-              Train with champions at ONE STOP FITNESS.
+              Cardio · Weight Training · Martial Arts · Personal Training.<br/>
+              {site.auth.loginTagline}
             </p>
             <div className="mt-7 flex flex-wrap gap-2">
-              {["Since 2002", "5+ Programs", "Expert Coaches"].map((t) => (
+              {site.auth.badges.map((t) => (
                 <span
                   key={t}
                   className="rounded-full border border-gym-lime/30 bg-gym-lime/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-gym-lime"
@@ -67,7 +68,7 @@ export default function AuthSplit({ children }: { children: ReactNode }) {
           </div>
 
           <p className="text-xs uppercase tracking-[0.3em] text-white/35">
-            Since 2002 · Lucknow
+            {establishedLine()}
           </p>
         </div>
       </div>
@@ -79,14 +80,14 @@ export default function AuthSplit({ children }: { children: ReactNode }) {
             <Icon name="dumbbell" className="h-5 w-5" />
           </span>
           <span className="font-anton text-lg uppercase tracking-wide text-white">
-            ONE STOP<span className="glow-lime">&nbsp;FITNESS</span>
+            {brandParts().word1}<span className="glow-lime">&nbsp;{brandParts().word2}</span>
           </span>
         </div>
 
         <div className="w-full max-w-md">{children}</div>
 
         <p className="mt-8 text-xs text-white/35">
-          © {new Date().getFullYear()} ONE STOP FITNESS · Lucknow
+          {copyrightLine()}
         </p>
       </div>
     </div>

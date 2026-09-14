@@ -17,8 +17,9 @@ import { prisma } from "@/lib/db";
  * scanner app required. Any camera works.
  *
  * SECURITY: The token is a 32-byte random hex string (256-bit entropy).
- * Guessing it is computationally infeasible. If compromised, admin can reset
- * it from the members page.
+ * Guessing it is computationally infeasible. Holding the token only grants a
+ * single daily attendance record (no PII, no account actions). If compromised,
+ * admin can reset it from the members page.
  */
 export async function GET(
   _req: NextRequest,
@@ -54,7 +55,6 @@ export async function GET(
         {
           error: "Membership expired or inactive.",
           memberName: user.name,
-          memberId: user.id,
           alreadyCheckedIn: false,
           success: false,
         },

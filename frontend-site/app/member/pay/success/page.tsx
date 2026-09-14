@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import { site, brandParts } from "@/data/site";
 import { Button, Card, Spinner } from "@/components/admin/ui";
 import { formatDate } from "@/lib/format";
 
@@ -108,7 +109,7 @@ export default function PaymentSuccessPage({
         <div className="flex items-center justify-between border-b border-white/10 pb-5">
           <div>
             <span className="font-anton text-xl uppercase tracking-wider text-white">
-              ONE STOP <span className="text-gym-lime">FITNESS</span>
+              {brandParts().word1} <span className="text-gym-lime">{brandParts().word2}</span>
             </span>
             <p className="text-xs text-white/40">Official Payment Receipt &amp; Invoice</p>
           </div>
@@ -169,7 +170,7 @@ export default function PaymentSuccessPage({
         </div>
 
         <p className="text-center text-[11px] text-white/35">
-          Thank you for training with ONE STOP FITNESS! Keep pushing your limits.
+          Thank you for training with {site.name}! Keep pushing your limits.
         </p>
       </Card>
 

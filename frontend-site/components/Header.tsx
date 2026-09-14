@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { brandParts } from "@/data/site";
 import { useState } from "react";
 import Icon from "./Icon";
 
@@ -28,7 +29,7 @@ export default function Header() {
             <Icon name="dumbbell" className="h-5 w-5" />
           </span>
           <span className="font-anton text-lg uppercase tracking-wide text-white">
-            ONE STOP<span className="glow-lime">&nbsp;FITNESS</span>
+            {brandParts().word1}<span className="glow-lime">&nbsp;{brandParts().word2}</span>
           </span>
         </Link>
 

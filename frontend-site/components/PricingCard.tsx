@@ -1,5 +1,6 @@
 import Icon from "./Icon";
 import WhatsAppButton from "./WhatsAppButton";
+import { site } from "@/data/site";
 
 export type PlanCard = {
   id: string;
@@ -22,7 +23,7 @@ export default function PricingCard({
   featured?: boolean;
   tag?: string;
 }) {
-  const message = `Hi ONE STOP FITNESS, I'm interested in the ${plan.name} plan (₹${plan.price}/month). Please share the details.`;
+  const message = site.messages.planInquiry(plan.name, plan.price, "month");
 
   return (
     <div

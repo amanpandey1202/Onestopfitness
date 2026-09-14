@@ -2,8 +2,10 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import { site, brandParts } from "@/data/site";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Card, Spinner } from "@/components/admin/ui";
+import { Button, Card, Spinner } from "@/components/admin/ui";
+import { applyOfferDiscount } from "@/lib/discount";
 
 type Plan = {
   id: string;
@@ -135,7 +137,7 @@ export default function PublicPayLandingPage({
         amount: orderData.amount,
         currency: orderData.currency,
         order_id: orderData.orderId,
-        name: "ONE STOP FITNESS",
+        name: site.name,
         description: `Plan: ${orderData.plan.name}`,
         prefill: orderData.prefill,
         theme: { color: "#9AD901" },
@@ -185,18 +187,7 @@ export default function PublicPayLandingPage({
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
   const basePrice = selectedPlan ? selectedPlan.price : 0;
-  let finalPrice = basePrice;
-  let discountAmount = 0;
-
-  if (selectedPlan && offer) {
-    if (offer.discountType === "PERCENT" && offer.discountValue) {
-      discountAmount = Math.round((basePrice * offer.discountValue) / 100);
-      finalPrice = Math.max(1, basePrice - discountAmount);
-    } else if (offer.discountType === "AMOUNT" && offer.discountValue) {
-      discountAmount = offer.discountValue;
-      finalPrice = Math.max(1, basePrice - discountAmount);
-    }
-  }
+  const { finalPrice, discountAmount } = applyOfferDiscount(basePrice, offer);
 
   return (
     <div className="min-h-screen bg-gym-black text-white px-4 py-8 md:py-16">
@@ -205,7 +196,7 @@ export default function PublicPayLandingPage({
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="font-anton text-2xl uppercase tracking-wider text-white hover:text-gym-lime transition">
-            ONE STOP <span className="text-gym-lime">FITNESS</span>
+            {brandParts().word1} <span className="text-gym-lime">{brandParts().word2}</span>
           </Link>
           <h1 className="mt-4 font-display text-2xl md:text-3xl font-bold uppercase tracking-wide">
             Checkout Portal

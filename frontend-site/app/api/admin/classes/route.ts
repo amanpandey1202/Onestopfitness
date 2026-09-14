@@ -20,6 +20,7 @@ const classSchema = z.object({
 
 export async function GET() {
   try {
+    await requireAdmin();
     const classes = await prisma.classSchedule.findMany({
       where: { isActive: true },
       orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],

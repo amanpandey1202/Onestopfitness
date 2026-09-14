@@ -44,9 +44,13 @@ export async function POST(req: NextRequest) {
 
     // Test-mode is derived purely from server-side state: the order must have
     // been created as a TEST_MODE order AND Razorpay must genuinely be
-    // unconfigured. It is NEVER controlled by the client (prevents free-membership
-    // exploits where a caller flips a client-supplied isTestMode flag).
-    const isTest = payment.method === "TEST_MODE" && !razorpayConfigured();
+    // unconfigured AND we are not in a production build/deploy. It is NEVER
+    // controlled by the client (prevents free-membership exploits where a
+    // caller flips a client-supplied isTestMode flag).
+    const isTest =
+      payment.method === "TEST_MODE" &&
+      !razorpayConfigured() &&
+      process.env.NODE_ENV !== "production";
 
     if (!isTest) {
       if (!data.paymentId || !data.signature) {

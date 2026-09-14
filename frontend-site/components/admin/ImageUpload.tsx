@@ -23,6 +23,7 @@ export default function ImageUpload({
   value,
   onChange,
   onTypeChange,
+  onPosterChange,
   folder = "misc",
   allowVideo = false,
   mediaType = "IMAGE",
@@ -30,6 +31,7 @@ export default function ImageUpload({
   value: string | null | undefined;
   onChange: (url: string) => void;
   onTypeChange?: (type: MediaType) => void;
+  onPosterChange?: (posterUrl: string | null) => void;
   folder?: string;
   allowVideo?: boolean;
   mediaType?: MediaType;
@@ -51,6 +53,9 @@ export default function ImageUpload({
       onChange(data.url);
       if (onTypeChange && (data.type === "IMAGE" || data.type === "VIDEO")) {
         onTypeChange(data.type);
+      }
+      if (onPosterChange) {
+        onPosterChange(data.posterUrl ?? null);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");

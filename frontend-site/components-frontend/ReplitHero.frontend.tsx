@@ -33,12 +33,12 @@ export default function ReplitHeroFrontend({ banner }: ReplitHeroProps) {
     <section
       className="hero noise-overlay"
       id="top"
-      aria-label="One Stop Fitness introduction"
+      aria-label={`${site.name} introduction`}
       style={style}
     >
       <div className="hero-content">
         <div className="hero-kicker eyebrow">
-          Lucknow&apos;s training ground · Est. {site.established}
+          {site.hero.kicker} · Est. {site.established}
         </div>
 
         <h1>
@@ -50,7 +50,7 @@ export default function ReplitHeroFrontend({ banner }: ReplitHeroProps) {
             </>
           ) : (
             <>
-              Be your<br /><em>best.</em>
+              {site.hero.title.split(" ").slice(0, -1).join(" ")}<br /><em>{site.hero.title.split(" ").slice(-1)[0]}</em>
             </>
           )}
         </h1>
@@ -72,7 +72,7 @@ export default function ReplitHeroFrontend({ banner }: ReplitHeroProps) {
         </div>
       </div>
 
-      <div className="hero-side-note">Train with intent / Lucknow, India</div>
+      <div className="hero-side-note">{site.hero.sideNote}</div>
       <div className="scroll-cue">
         <span aria-hidden="true" />
         Scroll to explore

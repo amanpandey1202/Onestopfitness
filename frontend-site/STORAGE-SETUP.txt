@@ -1,0 +1,156 @@
+================================================================================
+  ONE STOP FITNESS — PHOTO/STORAGE SETUP AT CLIENT HAND-OFF
+================================================================================
+This file explains how uploaded photos are stored today and exactly what to
+change when the client's Supabase project is ready. No code changes are ever
+needed — the app already supports "local" (this machine) and "supabase"
+(cloud) storage; you only edit a few lines in .env and run one command.
+
+--------------------------------------------------------------------------------
+SECTION 1 — HOW STORAGE WORKS TODAY (NOTHING TO SET UP)
+--------------------------------------------------------------------------------
+Current state in .env:
+
+    STORAGE_PROVIDER="local"
+
+With "local", every uploaded photo is saved to:
+
+    public/uploads/<folder>/<name>
+    (e.g. public/uploads/offers/abc123.jpg)
+
+and stored in the database as a URL like:
+
+    /uploads/offers/abc123.jpg
+
+The app knows nothing about where photos live — it talks to a storage
+abstraction (lib/storage.ts). So you can flip providers later without
+touching any page, API or database logic.
+
+IMPORTANT — production caveat for "local":
+    With a production build ("npm run start" / "next start"), files written to
+    public/ AFTER the build was made are NOT served and load as 404.
+    So while you trial the site locally:
+      - use "npm run dev", OR
+      - run "npm run build" after adding photos,
+    OR simply switch to Supabase Storage (Section 2), which fixes this forever.
+
+--------------------------------------------------------------------------------
+SECTION 2 — CLIENT SETUP (SUPABASE STORAGE) — STEP BY STEP
+--------------------------------------------------------------------------------
+The client (or you) creates the Supabase project once. Supabase free tier
+includes 1GB storage.
+
+STEP 1 — Create the Supabase project
+  1. Go to https://supabase.com and create the client's project.
+  2. If you also use Supabase Postgres for the database, this is the same
+     project. Note the project URL, e.g. https://xxxx.supabase.co
+
+STEP 2 — Open .env and change exactly 4 lines
+  Find these lines in .env:
+
+    STORAGE_PROVIDER="local"
+    SUPABASE_URL="https://noggiarpolkdydhnenpm.supabase.co"
+    SUPABASE_SERVICE_ROLE_KEY=""
+    SUPABASE_STORAGE_BUCKET="uploads"
+
+  Change them to:
+
+    STORAGE_PROVIDER="supabase"
+    SUPABASE_URL="https://<their-project-ref>.supabase.co"
+    SUPABASE_SERVICE_ROLE_KEY="<the-service-role-secret>"
+    SUPABASE_STORAGE_BUCKET="uploads"
+
+  Where:
+    - SUPABASE_URL
+        The client project URL (Project Settings → General → API → Project URL),
+        e.g. https://abcdefg.supabase.co
+        NOTE: if the DATABASE_URL already starts with "<ref>.supabase.co",
+        the app auto-derives this URL — you can even leave it blank.
+    - SUPABASE_SERVICE_ROLE_KEY
+        The SECRET key: Supabase Dashboard → Project Settings → API →
+        "service_role" (the secret, NOT the anon public key).
+        It starts with "sb_secret_...".
+    - SUPABASE_STORAGE_BUCKET
+        The bucket name. "uploads" is the default — keep it.
+
+  That is the ONLY file you edit. Nothing in the code changes.
+
+STEP 3 — Create the bucket + move any existing photos
+  Existing photos already sit in public/uploads. One command uploads them to
+  the cloud AND rewrites every database image URL, and it also creates the
+  public bucket automatically:
+
+    npm run storage:migrate
+
+  What it does (safely):
+    - Creates a PUBLIC bucket named "uploads" if missing (idempotent).
+    - Uploads every file under public/uploads that a DB row references.
+    - Rewrites those DB rows to cloud URLs of the form:
+        https://<ref>.supabase.co/storage/v1/object/public/uploads/...
+    - Skips rows whose file is missing on disk and logs them (fix those manually).
+    - NEVER deletes local files and NEVER deletes rows.
+    - Can be re-run any time (rows already pointing to cloud are skipped).
+
+  Manual alternative (Dashboard, no script):
+    Supabase Dashboard → Storage → New bucket → name "uploads" → check
+    "Public bucket" → Create. (You must still run the migrate script to
+    move existing photos, or upload them manually via the Dashboard.)
+
+STEP 4 — Restart the app and verify
+  1. Restart the server (npm run dev, or rebuilt build) so .env is reloaded.
+  2. In admin, upload any photo (e.g. a new Offer image).
+  3. Confirmed working = the saved URL looks like:
+       https://<ref>.supabase.co/storage/v1/object/public/uploads/...
+     and opens correctly in a browser (any device, not just your PC).
+  4. Rebuild for production: npm run build  +  npm run start
+
+STEP 5 — Optional cleanup after a visual check
+  The script does NOT delete the local copies in public/uploads. After you
+  confirm all photos render from the cloud, you may delete public/uploads.
+  (Deleting them is safe; the site no longer reads from disk.)
+  New uploads go straight to cloud. Admin deletes (deleting an offer, gallery
+  image, etc.) also delete the cloud file automatically.
+
+LIMITS — Supabase free tier: 1GB storage. Life after that is a paid plan.
+
+--------------------------------------------------------------------------------
+SECTION 3 — REVERTING / SWITCHING PROVIDERS LATER
+--------------------------------------------------------------------------------
+Back to LOCAL (disk) storage:
+    - Set STORAGE_PROVIDER="local" in .env and restart.
+    - Old rows already rewritten to cloud URLs will keep loading from the
+      cloud (fine). Local /uploads/... URLs work again immediately.
+      (Run no migrate script to go backward — rollback is manual if needed.)
+
+Switch to another provider (e.g. Cloudinary / Vercel Blob / AWS S3):
+    - STORAGE_PROVIDER only accepts "local" | "supabase" today.
+    - To add one: write a provider class in lib/storage.ts (a ~40-line class
+      implementing save()/delete()), register it in the providers map, add a
+      deleteStoredImage branch for that provider's URL shape, and write a
+      migrate variant. Pages, routes and the DB schema stay unchanged.
+    - Swap the SUPABASE_* env lines for the new provider's credentials.
+
+--------------------------------------------------------------------------------
+SECTION 4 — SECURITY NOTES
+--------------------------------------------------------------------------------
+- The service_role key is a SUPERUSER key. It can read and write everything in
+  your Supabase project, including the database.
+- It is read ONLY by the server (lib/storage.ts + scripts/migrate-uploads.ts).
+  It must NEVER appear in browser code or API responses.
+- Keep it in .env only. .env is already in .gitignore, so it is never
+  committed to git or shipped in the build.
+- You can rotate (regenerate) the service_role key any time in Supabase
+  Dashboard → Project Settings → API → service_role → "Rotate". If you rotate
+  it, update .env and restart.
+
+--------------------------------------------------------------------------------
+QUICK HAND-OFF CHECKLIST
+--------------------------------------------------------------------------------
+[ ] Create client Supabase project; copy the Project URL.
+[ ] .env: STORAGE_PROVIDER="supabase"
+[ ] .env: SUPABASE_URL="https://<their-ref>.supabase.co"
+[ ] .env: SUPABASE_SERVICE_ROLE_KEY="sb_secret_... (from Settings → API)"
+[ ] Run:  npm run storage:migrate
+[ ] Restart + upload a test photo → cloud URL opens in a browser.
+[ ] npm run build  &&  npm run start
+[ ] (Optional) delete public/uploads after all photos verified.

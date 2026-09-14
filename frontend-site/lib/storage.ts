@@ -42,12 +42,109 @@ class LocalDiskStorage implements StorageProvider {
     if (!resolved.startsWith(rootResolved + path.sep)) {
       return;
     }
-    await fs.promises.rm(filePath, { force: true });
+    try {
+      await fs.promises.rm(filePath, { force: true });
+    } catch (err) {
+      // Serverless (Vercel) filesystems are read-only — there is nothing to
+      // delete there, and the DB row is already gone. Swallow EROFS/ENOENT/
+      // EPERM so cleanup is always a no-op instead of a 500.
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code !== "EROFS" && code !== "ENOENT" && code !== "EPERM") {
+        throw err;
+      }
+    }
   }
+}
+
+/**
+ * Supabase Storage provider. Stores files in a Supabase Storage bucket and
+ * returns the public URL. Uses the Storage REST API directly (global fetch),
+ * so no extra dependency is needed.
+ */
+export class SupabaseStorage implements StorageProvider {
+  async save(buffer: Buffer, originalName: string, folder: string): Promise<StoredFile> {
+    const ext = path.extname(originalName).toLowerCase() || ".jpg";
+    const safeFolder = (folder || "misc").replace(/[^a-z0-9_-]/gi, "").slice(0, 50) || "misc";
+    const name = crypto.randomBytes(16).toString("hex") + ext;
+    const objectPath = `${safeFolder}/${name}`;
+    const res = await fetch(supabaseObjectEndpoint(objectPath), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${supabaseServiceRoleKey()}`,
+        "Content-Type": mimeFromExt(ext),
+        "x-upsert": "true",
+      },
+      body: new Uint8Array(buffer),
+    });
+    if (!res.ok) {
+      throw new Error(`Supabase upload failed (${res.status}): ${(await res.text()).slice(0, 300)}`);
+    }
+    return {
+      url: `${supabaseUrl()}/storage/v1/object/public/${supabaseBucket()}/${objectPath}`,
+      publicId: objectPath,
+    };
+  }
+
+  async remove(publicId: string): Promise<void> {
+    // Never let a crafted publicId escape into another object path.
+    if (!publicId || publicId.includes("..") || publicId.includes("\\") || publicId.includes(":")) {
+      return;
+    }
+    const res = await fetch(supabaseObjectEndpoint(publicId), {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${supabaseServiceRoleKey()}` },
+    });
+    // 200/204 = deleted, 404 = already gone — both are fine.
+    if (res.status !== 200 && res.status !== 204 && res.status !== 404) {
+      throw new Error(`Supabase delete failed (${res.status}): ${(await res.text()).slice(0, 300)}`);
+    }
+  }
+}
+
+/** Full REST endpoint for an object under the configured bucket. */
+function supabaseObjectEndpoint(objectPath: string): string {
+  return `${supabaseUrl()}/storage/v1/object/${supabaseBucket()}/${objectPath}`;
+}
+
+export function supabaseUrl(): string {
+  const fromEnv = process.env.SUPABASE_URL;
+  if (fromEnv) return fromEnv.replace(/\/+$/, "");
+  // Derive from the Supabase-hosted DATABASE_URL when SUPABASE_URL isn't set:
+  // postgresql://postgres:xxx@db.<ref>.supabase.co:5432/postgres
+  const match = process.env.DATABASE_URL?.match(/@db\.([a-z0-9]+)\.supabase\.co/);
+  if (match) return `https://${match[1]}.supabase.co`;
+  throw new Error("Set SUPABASE_URL (or a supabase.co DATABASE_URL) in .env");
+}
+
+export function supabaseBucket(): string {
+  return process.env.SUPABASE_STORAGE_BUCKET || "uploads";
+}
+
+export function supabaseServiceRoleKey(): string {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set in .env");
+  return key;
+}
+
+function mimeFromExt(ext: string): string {
+  return (
+    {
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".webp": "image/webp",
+      ".gif": "image/gif",
+      ".mp4": "video/mp4",
+      ".webm": "video/webm",
+      ".mov": "video/quicktime",
+      ".m4v": "video/x-m4v",
+    }[ext] || "application/octet-stream"
+  );
 }
 
 const providers: Record<string, () => StorageProvider> = {
   local: () => new LocalDiskStorage(),
+  supabase: () => new SupabaseStorage(),
 };
 
 export function getStorage(): StorageProvider {
@@ -123,8 +220,28 @@ export function publicIdFromUrl(url: string | null | undefined): string | null {
   return url.slice(prefix.length);
 }
 
-/** Deletes an uploaded file if it's a local upload (seed/static images are untouched). */
+/** Extracts the object path from a Supabase Storage public URL (or null). */
+export function supabasePublicIdFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const prefix = `${supabaseUrl()}/storage/v1/object/public/${supabaseBucket()}/`;
+    if (!url.startsWith(prefix)) return null;
+    return url.slice(prefix.length);
+  } catch {
+    return null; // env not configured yet — nothing to match against
+  }
+}
+
+/**
+ * Deletes an uploaded file. Routes by the URL's shape so cleanup never touches
+ * the wrong provider during/after a migration (seed/static URLs are untouched).
+ */
 export async function deleteStoredImage(url: string | null | undefined): Promise<void> {
-  const publicId = publicIdFromUrl(url);
-  if (publicId) await getStorage().remove(publicId);
+  const supabaseId = supabasePublicIdFromUrl(url);
+  if (supabaseId) {
+    await new SupabaseStorage().remove(supabaseId);
+    return;
+  }
+  const localId = publicIdFromUrl(url);
+  if (localId) await new LocalDiskStorage().remove(localId);
 }

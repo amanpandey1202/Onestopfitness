@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
+import { numTri, strTri, saneMeals, requireValidMemberId } from "@/lib/dietPatch";
 
 export async function DELETE(
   _req: NextRequest,
@@ -29,21 +30,56 @@ export async function PATCH(
     const admin = await requireAdmin();
     const { id } = await ctx.params;
     const body = await req.json();
-    const plan = await prisma.dietPlan.update({
+
+    // Reassignment must point at a real MEMBER account.
+    const memberId =
+      body.memberId === undefined ? undefined : await requireValidMemberId(body.memberId);
+
+    // Update the plan header fields
+    await prisma.dietPlan.update({
       where: { id },
       data: {
-        title: body.title,
-        description: body.description ?? null,
-        goal: body.goal ?? null,
-        calorieTarget: body.calorieTarget ?? null,
-        proteinGm: body.proteinGm ?? null,
-        carbsGm: body.carbsGm ?? null,
-        fatGm: body.fatGm ?? null,
-        isActive: body.isActive,
+        memberId,
+        trainerId:
+          body.trainerId === undefined
+            ? undefined
+            : body.trainerId === null || body.trainerId === ""
+            ? null
+            : String(body.trainerId),
+        title: body.title === undefined ? undefined : String(body.title),
+        description: strTri(body.description),
+        goal: strTri(body.goal),
+        calorieTarget: numTri(body.calorieTarget),
+        proteinGm: numTri(body.proteinGm),
+        carbsGm: numTri(body.carbsGm),
+        fatGm: numTri(body.fatGm),
+        isActive: body.isActive === undefined ? undefined : Boolean(body.isActive),
       },
     });
+
+    // Replace meals in a transaction when the payload includes them
+    const meals = saneMeals(body.meals);
+    if (meals) {
+      await prisma.$transaction([
+        prisma.dietMeal.deleteMany({ where: { dietPlanId: id } }),
+        ...meals.map((m) =>
+          prisma.dietMeal.create({
+            data: { ...m, dietPlanId: id },
+          })
+        ),
+      ]);
+    }
+
     await logAudit(admin.id, "UPDATE_DIET_PLAN", "DietPlan", id);
-    return ok({ plan });
+    const refreshed = await prisma.dietPlan.findUnique({
+      where: { id },
+      include: {
+        meals: { orderBy: { orderIndex: "asc" } },
+        member: { select: { name: true } },
+        trainer: { select: { id: true, name: true } },
+      },
+    });
+    return ok({ plan: refreshed });
   } catch (e) {
     return fail(e);
   }

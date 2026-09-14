@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Anton, Barlow_Condensed, DM_Sans, Poppins, Space_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { site } from "@/data/site";
 import "./globals.css";
 
 const anton = Anton({
@@ -37,23 +40,12 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ONE STOP FITNESS — Lucknow's #1 Gym | Be Your Best",
-  description:
-    "Cardio, Weight Training, Martial Arts, Personal Training & group classes in Rajajipuram, Lucknow. Join ONE STOP FITNESS and Be Your Best.",
-  keywords: [
-    "gym in Lucknow",
-    "ONE STOP FITNESS",
-    "fitness center",
-    "cardio",
-    "weight training",
-    "martial arts",
-    "personal training",
-    "Rajajipuram gym",
-  ],
+  title: site.seo.title,
+  description: site.seo.description,
+  keywords: site.seo.keywords,
   openGraph: {
-    title: "ONE STOP FITNESS — Be Your Best",
-    description:
-      "Lucknow's premium fitness center. Cardio, Weight Training, Martial Arts, Personal Training. Since 2002.",
+    title: site.seo.ogTitle,
+    description: site.seo.ogDescription,
     type: "website",
   },
 };
@@ -68,6 +60,8 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-gym-black text-white antialiased">
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

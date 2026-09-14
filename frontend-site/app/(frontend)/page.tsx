@@ -7,23 +7,35 @@ import {
   getPublishedGallery,
   getPublishedTestimonials,
   getPublishedTrainers,
+  getSchedule,
 } from "@/lib/services/public";
 import FrontendPageClient from "./FrontendPageClient";
 
 // Always fresh — admin edits show within seconds
 export const dynamic = "force-dynamic";
 
+/** One failing data source must never take down the page — the hero is hardcoded and always renders. */
+async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.error("[home-ssr]", error);
+    return fallback;
+  }
+}
+
 export default async function FrontendHomePage() {
-  const [banners, offers, plans, trainers, gallery, competitions, testimonials, announcements] =
+  const [banners, offers, plans, trainers, gallery, competitions, testimonials, announcements, schedule] =
     await Promise.all([
-      getPublishedBanners(),
-      getActiveOffers(),
-      getActivePlans(),
-      getPublishedTrainers(),
-      getPublishedGallery(),
-      getPublishedCompetitions(),
-      getPublishedTestimonials(),
-      getPublishedAnnouncements(),
+      safe(() => getPublishedBanners(), []),
+      safe(() => getActiveOffers(), []),
+      safe(() => getActivePlans(), []),
+      safe(() => getPublishedTrainers(), []),
+      safe(() => getPublishedGallery(), []),
+      safe(() => getPublishedCompetitions(), []),
+      safe(() => getPublishedTestimonials(), []),
+      safe(() => getPublishedAnnouncements(), []),
+      safe(() => getSchedule(), []),
     ]);
 
   return (
@@ -36,6 +48,7 @@ export default async function FrontendHomePage() {
       competitions={competitions}
       testimonials={testimonials}
       announcements={announcements}
+      schedule={schedule}
     />
   );
 }

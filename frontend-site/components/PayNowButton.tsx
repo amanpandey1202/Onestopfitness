@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/components/admin/ui";
+import { site } from "@/data/site";
 
 type MeResponse = {
   user?: { name: string; email: string; phone: string | null } | null;
@@ -67,7 +68,7 @@ export default function PayNowButton({
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "ONE STOP FITNESS",
+        name: site.name,
         description: plan.name,
         order_id: orderData.orderId,
         method: {

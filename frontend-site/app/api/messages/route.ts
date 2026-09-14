@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { site } from "@/data/site";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/rbac";
 import { fail } from "@/lib/api";
@@ -72,20 +73,20 @@ export async function POST(req: NextRequest) {
       case "absentee": {
         message = customMessage
           ? customMessage
-          : `Hey ${name}! 💪 We've noticed you haven't visited ONE STOP FITNESS in ${daysSinceLast} days — the machines and trainers are missing you!\n\nYour fitness journey matters to us. Come back and let's get back on track together. We're here 6 days a week!\n\nSee you soon! 🔥`;
+          : site.messages.absenteeBroadcast(name, daysSinceLast);
         break;
       }
       case "expiry-soon": {
         message = customMessage
           ? customMessage
-          : `Hey ${name}! ⏰ A quick reminder — your *${planName}* membership (₹${planPrice.toLocaleString("en-IN")}) expires in *${Math.max(daysUntilExpiry, 0)} day${daysUntilExpiry === 1 ? "" : "s"}*.\n\nRenew now and don't break your streak. Talk to us at the front desk or reply here to continue!\n\nONE STOP FITNESS — Train Different. 💚`;
+          : site.messages.expiryWarning(name, planName, planPrice, Math.max(daysUntilExpiry, 0));
         break;
       }
       case "expiry-crossed": {
         const expiredDaysAgo = Math.abs(daysUntilExpiry);
         message = customMessage
           ? customMessage
-          : `Hey ${name}! ⚠️ Your *${planName}* membership expired *${expiredDaysAgo} day${expiredDaysAgo === 1 ? "" : "s"} ago*.\n\nWe want you back! Renew at ₹${planPrice.toLocaleString("en-IN")}/month and restart your fitness journey — no gap in your progress.\n\nONE STOP FITNESS is waiting for you. 💚`;
+          : site.messages.expiredFollowup(name, planName, planPrice, expiredDaysAgo);
         break;
       }
       default:

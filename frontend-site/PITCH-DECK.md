@@ -1,8 +1,13 @@
-# ONE STOP FITNESS — Client Pitch (Gym Owners)
+# GYM BRAND — Client Pitch (Gym Owners)
 
 > **What this is:** a ready-to-present overview of the product. Show the screens,
 > then walk the 5-minute live demo (Section 8). Keep the demo on the **staging
 > / demo site**, never on a live owner's production data.
+>
+> **Before pitching / transferring to any gym owner**, run through
+> `WHITELABEL-TRANSFER-CHECKLIST.md` — it clears every old-owner string from
+> code, database, media, env keys and deploy junk. One branch per gym
+> (`whitelabel/<gym>`) keeps each handover clean and isolated.
 
 ---
 
@@ -24,15 +29,16 @@
 | **Online Payments** | Members renew online (UPI / cards / netbanking) via Razorpay — staff stop chasing renewals |
 | **Retention Automation** | WhatsApp re-engagement (absentees & expiring), expiry reminders, Airtable/Excel records, membership freeze |
 | **Accountability** | Audit log of every admin action, attendance records, revenue dashboard |
+| **Cloud media storage** | Photos & videos live in the **gym owner's own Supabase storage bucket** — admin uploads/deletes never touch server disk (safe on Vercel's read-only filesystem) |
 
 ---
 
 ## 3. Marketing website — features to show
 
 - **Admin-driven homepage** — hero banner, offers (with expiry dates), announcements ticker, all editable live; no code required.
-- **Live pricing cards** — plans pulled straight from the admin panel; change price today, site updates instantly.
+- **Live pricing cards** — plans pulled straight from the admin panel (the database); change price today, site updates instantly.
 - **WhatsApp-first conversion** — every "Join / Ask price / Book tour" button opens WhatsApp with a **pre-filled message about that exact plan**. Ideal for the Indian market.
-- **Gallery with photos + videos** — sliding gallery, auto-rotates; the owner uploads real gym videos (up to 50 MB).
+- **Gallery with photos + videos** — sliding gallery, auto-rotates; the owner uploads real gym videos (up to 50 MB) to **their own Supabase storage**, not the server disk.
 - **Trainers & founder section** — bios, photos, championships/titles, founder note.
 - **Competitions / challenges** — members join from the homepage.
 - **Testimonial carousel + FAQ + embedded Google Map + floating WhatsApp button.**
@@ -122,5 +128,6 @@
 - Screenshots/recording of the 5-min flow in case live internet fails.
 - A one-page **price/pricing sheet for your service** (setup fee, monthly, per-gym white-label).
 - A short **onboarding promises** list: setup, data import from their Excel, staff walkthrough, WhatsApp number switch, backup.
+- **Run `WHITELABEL-TRANSFER-CHECKLIST.md` end-to-end on the staging clone first** — it guarantees zero leaked old-owner branding, updated env keys, cleaned deploy junk, and a passing build (`tsc`, `lint`, `npm run build`). Save the passed "Quick am I done?" test as evidence.
 
 _Keep this deck in sync with the product as features change._

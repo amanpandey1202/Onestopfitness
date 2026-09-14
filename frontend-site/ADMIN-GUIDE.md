@@ -1,4 +1,4 @@
-# ONE STOP FITNESS — Owner's Guide
+# GYM BRAND — Owner's Guide
 
 This is your management platform. **You no longer need to edit code to change
 prices, photos, banners, offers, or trainers** — everything happens in the
@@ -14,7 +14,7 @@ prices, photos, banners, offers, or trainers** — everything happens in the
 
    | Field    | Default value          |
    | -------- | ---------------------- |
-   | Email    | `admin@onestopfit.in`  |
+   | Email    | `admin@gymbrand.com`  |
    | Password | `Admin@12345`          |
 
    ⚠️ **Change this password before real use** — register a new admin or ask a
@@ -129,10 +129,17 @@ If port 3000 is busy, use a different port: `npm run dev -- -p 3100`.
 - **Database:** the project runs on **SQLite locally** (a file, no setup).
   For production, create a **Postgres** database and change `DATABASE_URL`
   in your hosting environment (the schema is already Postgres-compatible), then
-  run `prisma db push` and `prisma db seed` once.
-- **Storage:** images save to `public/uploads` locally (`STORAGE_PROVIDER=local`).
-  For production, swap to a cloud provider (e.g. Cloudinary/Supabase Storage) —
-  the code doesn't change, just the provider.
+  run `prisma db push` and `prisma db seed` once. Recommended: **Supabase**
+  (free tier, auto-backups — member data survives any server change).
+- **Storage:** default `STORAGE_PROVIDER=local` writes images to
+  `public/uploads` on the machine (fine for dev). For production set
+  `STORAGE_PROVIDER="supabase"` so uploads live in **Supabase Storage**
+  (1GB free, CDN-hosted, survives your laptop disc dying). Setup:
+  1. Add `SUPABASE_SERVICE_ROLE_KEY` (Project Settings → API → `service_role`)
+     to `.env`, plus `SUPABASE_URL` and `SUPABASE_STORAGE_BUCKET` (default `uploads`).
+  2. Run `npm run storage:migrate` once to upload existing local images and
+     rewrite the database URLs.
+  3. Flip `STORAGE_PROVIDER="supabase"` in `.env`.
 - **Vercel:** connect the repo, set `DATABASE_URL`, `SEED_*`, and
   `STORAGE_PROVIDER` in Project Settings → Environment Variables, and deploy.
   The admin and member portals are included — just visit `/admin`.

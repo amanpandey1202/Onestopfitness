@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { site, whatsappLink } from "@/data/site";
+import { site, whatsappLink, yearsOfOperation } from "@/data/site";
+import { planPeriodLabel } from "@/lib/format";
 import PayNowButton from "@/components/PayNowButton";
 import NewsSlideshow from "@/components/NewsSlideshow";
 import CountUp from "@/components/CountUp";
 import ScrollZoom from "@/components/ScrollZoom";
-import Reveal from "@/components/Reveal";
 
 /* ─── Inline SVG Icons ─────────────────────────────────────────────────── */
 const ChevL = () => <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
@@ -29,13 +28,38 @@ const QuoteIcon    = () => <svg viewBox="0 0 24 24" width="38" height="38" fill=
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 type Banner     = { id: string; title: string; subtitle: string | null; imageUrl: string | null; buttonText: string | null; buttonLink: string | null };
-type Offer      = { id: string; title: string; description: string | null; discountValue: number | null; discountType: string | null; endDate: Date | string | null; imageUrl?: string | null };
-type Plan       = { id: string; name: string; description: string | null; price: number; features: string[] };
+type Offer      = { id: string; title: string; description: string | null; discountValue: number | null; discountType: string | null; endDate: Date | string | null; imageUrl?: string | null; planId?: string | null };
+type Plan       = { id: string; name: string; description: string | null; price: number; durationDays?: number | null; features: string[] };
 type Trainer    = { id: string; name: string; specialization: string; bio: string | null; profileImageUrl: string | null; isFounder: boolean; founderNote: string | null; founderTitles: string[] };
-type GalleryImg = { imageUrl: string; title: string; mediaType?: string | null };
+type GalleryImg = { imageUrl: string; title: string; mediaType?: string | null; posterUrl?: string | null };
 type Testimonial= { id: string; name: string; role: string | null; quote: string; imageUrl?: string | null };
-type Competition= { id: string; title: string; description: string | null; startDate: Date | string | null; endDate: Date | string | null; maxParticipants: number | null; bannerUrl?: string | null; _count: { participants: number } };
+type Competition= { id: string; title: string; description: string | null; startDate: Date | string | null; endDate: Date | string | null; maxParticipants: number | null; bannerUrl?: string | null; linkUrl?: string | null; clickCount?: number; _count: { participants: number } };
 type Announcement = { id: string; title: string; body: string };
+type ScheduleClass = { id: string; name: string; dayOfWeek: number; startTime: string; endTime: string; location: string | null };
+
+const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+type ResolvedHero = {
+  kicker: string;
+  title: string;
+  subtitle: string;
+  buttonText: string;
+  buttonLink: string;
+  imageUrl: string | null;
+  sideNote: string;
+};
+
+/* The deployed default — shows whenever no banner is published, or the banner
+   data failed to load. A published banner still overrides it entirely. */
+const DEFAULT_HERO: ResolvedHero = {
+  kicker: `${site.hero.kicker} · Est. ${site.established}`,
+  title: site.hero.title,
+  subtitle: site.hero.subtitle,
+  buttonText: "Start your membership",
+  buttonLink: "",
+  imageUrl: "/images/hero-bg.jpg",
+  sideNote: site.hero.sideNote,
+};
 
 /* ─── Helper ─────────────────────────────────────────────────────────────── */
 function fmtDate(d: Date | string | null) {
@@ -45,16 +69,15 @@ function fmtDate(d: Date | string | null) {
 
 /* ─── Static content (same as Replit) ───────────────────────────────────── */
 const services = [
-  { num: "01", title: "Group Classes",        copy: "A room full of energy, with a coach who knows exactly when to push.",        tag: "ZUMBA · YOGA · SPIN",       img: "/images/gallery/group-class.svg" },
-  { num: "02", title: "Personal Training",    copy: "A plan built around your body, your pace, and the result you came for.",     tag: "ONE-TO-ONE COACHING",     img: "/images/hero-bg.jpg" },
-  { num: "03", title: "Martial Arts",         copy: "Technique, composure and a serious conditioning session in every round.",    tag: "BOXING · COMBAT",          img: "/images/gallery/martial-arts.svg" },
-  { num: "04", title: "Outdoor Sessions",     copy: "Take the work outside. Conditioning that keeps the city in the background.", tag: "WEEKEND SESSIONS",        img: "/images/gallery/outdoor.svg" },
-  { num: "05", title: "Nutrition & Wellness", copy: "Practical guidance to make the work in the gym count everywhere else.",      tag: "FUEL · RECOVER · REPEAT",  img: "/images/gallery/yoga.svg" },
-  { num: "06", title: "High-Tech Equipment",  copy: "Premium free weights and machines, maintained for the way you train.",       tag: "BUILT FOR PROGRESS",       img: "/images/gallery/equipment.svg" },
+  { num: "01", title: "Group Classes",        copy: "A room full of energy, with a coach who knows exactly when to push.",        tag: "ZUMBA · YOGA · SPIN",       img: "/images/services/group-class/cover.jpg" },
+  { num: "02", title: "Personal Training",    copy: "A plan built around your body, your pace, and the result you came for.",     tag: "ONE-TO-ONE COACHING",     img: "/images/services/personal-training/cover.jpg" },
+  { num: "03", title: "Martial Arts",         copy: "Technique, composure and a serious conditioning session in every round.",    tag: "BOXING · COMBAT",          img: "/images/services/martial-arts/cover.jpg" },
+  { num: "04", title: "Outdoor Sessions",     copy: "Take the work outside. Conditioning that keeps the city in the background.", tag: "WEEKEND SESSIONS",        img: "/images/services/outdoor/cover.jpg" },
+  { num: "05", title: "Nutrition & Wellness", copy: "Practical guidance to make the work in the gym count everywhere else.",      tag: "FUEL · RECOVER · REPEAT",  img: "/images/services/nutrition-wellness/cover.jpg" },
+  { num: "06", title: "High-Tech Equipment",  copy: "Premium free weights and machines, maintained for the way you train.",       tag: "BUILT FOR PROGRESS",       img: "/images/services/high-tech-equipment/cover.jpg" },
 ];
-const classes = ["Zumba", "Aerobics", "Spinning", "Yoga", "Martial Arts", "Conditioning"];
 const stats = [
-  { n: 22, s: "", label: "years of showing up" },
+  { n: yearsOfOperation(), s: "", label: "years of showing up" },
   { n: 6, s: "", label: "days to make it count" },
   { n: 5, s: "+", label: "ways to train your way" },
   { n: 1, s: "", label: "standard: your best" },
@@ -65,6 +88,31 @@ const faqs = [
   ["Can I try the facility before joining?", "Yes. Message us on WhatsApp to arrange a visit and a quick orientation with our team."],
   ["What does a membership include?",        "Membership gives you access to the main training floor and our full-service facility. Personal training and select classes are available as focused add-ons."],
 ];
+
+/* ─── Competition form CTA ──────────────────────────────────────────────── */
+function CompetitionFormCta({ competition }: { competition: Competition }) {
+  const [count, setCount] = useState(competition.clickCount ?? 0);
+  const [sent, setSent] = useState(false);
+  return (
+    <a
+      className="competition-form-cta"
+      style={{ marginTop: 16 }}
+      href={competition.linkUrl!}
+      target="_blank"
+      rel="noreferrer"
+      onClick={() => {
+        if (sent) return;
+        setSent(true);
+        setCount((v) => v + 1);
+        fetch(`/api/public/competitions/${competition.id}/click`, { method: "POST" }).catch(() => {});
+      }}
+    >
+      <span>Fill the form</span>
+      <span className="competition-form-count">{count}</span>
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+    </a>
+  );
+}
 
 /* ─── Testimonial carousel ───────────────────────────────────────────────── */
 function TestimonialsSection({ testimonials }: { testimonials: Testimonial[] }) {
@@ -129,7 +177,7 @@ function FAQSection() {
         <div className="faq-layout">
           <div>
             <div className="eyebrow">Good questions</div>
-            <h2 className="section-title">Before<br /><span style={{ color: "var(--lime)" }}>you begin.</span></h2>
+            <h2 className="section-title">Before<br /><span style={{ color: "var(--lime)", WebkitTextStroke: "2px var(--ink)" }}>you begin.</span></h2>
             <p className="section-copy" style={{ marginTop: 25 }}>Still deciding? That is fair. Here are the things members ask us most.</p>
           </div>
           <div>
@@ -155,7 +203,7 @@ function FAQSection() {
 
 /* ─── Main page ──────────────────────────────────────────────────────────── */
 export default function FrontendPageClient({
-  banner, offers, plans, trainers, gallery, competitions, testimonials, announcements,
+  banner, offers, plans, trainers, gallery, competitions, testimonials, announcements, schedule,
 }: {
   banner: Banner | null;
   offers: Offer[];
@@ -165,6 +213,7 @@ export default function FrontendPageClient({
   competitions: Competition[];
   testimonials: Testimonial[];
   announcements: Announcement[];
+  schedule: ScheduleClass[];
 }) {
   const founder = trainers.find(t => t.isFounder);
   const featuredTrainers = trainers.filter(t => !t.isFounder).slice(0, 3);
@@ -179,36 +228,51 @@ export default function FrontendPageClient({
     return () => obs.disconnect();
   }, []);
 
-  const heroImageUrl = banner?.imageUrl ?? "/images/hero-bg.jpg";
+  const hero: ResolvedHero = banner
+    ? {
+        kicker: DEFAULT_HERO.kicker,
+        title: banner.title,
+        subtitle: banner.subtitle ?? DEFAULT_HERO.subtitle,
+        buttonText: banner.buttonText ?? DEFAULT_HERO.buttonText,
+        buttonLink: banner.buttonLink ?? "",
+        imageUrl: banner.imageUrl ?? DEFAULT_HERO.imageUrl,
+        sideNote: DEFAULT_HERO.sideNote,
+      }
+    : DEFAULT_HERO;
+  const heroTitleParts = hero.title.trim().split(/\s+/);
+  const heroLastWord = heroTitleParts.length > 1 ? heroTitleParts.pop() : null;
+  const heroImageUrl = hero.imageUrl ?? "/images/hero-bg.jpg";
   const style = { "--hero-image": `url(${heroImageUrl})` } as React.CSSProperties;
+  const heroHref = hero.buttonLink || whatsappLink();
+  const heroIsExternal = /^https?:\/\//.test(heroHref) || heroHref.startsWith("whatsapp:");
 
   return (
     <div className="noise-overlay">
       {/* ── HERO ── */}
-      <section className="hero" id="top" aria-label="One Stop Fitness introduction" style={style}>
+      <section className="hero" id="top" aria-label={`${site.name} introduction`} style={style}>
         <div className="hero-ambient" aria-hidden="true" />
         <div className="hero-content">
-          <div className="hero-kicker eyebrow">Lucknow&apos;s training ground · Est. {site.established}</div>
+          <div className="hero-kicker eyebrow">{hero.kicker}</div>
           <h1>
-            {banner?.title ? (
-              <>{banner.title.split(" ").slice(0, -1).join(" ")}<br /><em>{banner.title.split(" ").slice(-1)[0]}</em></>
+            {heroLastWord ? (
+              <>{heroTitleParts.join(" ")}<br /><em>{heroLastWord}</em></>
             ) : (
-              <>Be your<br /><em>best.</em></>
+              <em>{hero.title}</em>
             )}
           </h1>
-          <p className="hero-intro">
-            {banner?.subtitle ?? "A full-service fitness centre for people who are done waiting for the right time. Find your pace. Build your standard."}
-          </p>
+          <p className="hero-intro">{hero.subtitle}</p>
           <div className="hero-actions">
-            {banner?.buttonText ? (
-              <Link href={banner.buttonLink || whatsappLink()} className="button-primary">{banner.buttonText}</Link>
-            ) : (
-              <Link href={whatsappLink()} target="_blank" rel="noreferrer" className="button-primary">Start your membership</Link>
-            )}
+            <Link
+              href={heroHref}
+              className="button-primary"
+              {...(heroIsExternal ? { target: "_blank", rel: "noreferrer" } : {})}
+            >
+              {hero.buttonText}
+            </Link>
             <a className="button-outline" href="#services">Explore the floor</a>
           </div>
         </div>
-        <div className="hero-side-note">Train with intent / Lucknow, India</div>
+        <div className="hero-side-note">{hero.sideNote}</div>
         <div className="scroll-cue"><span aria-hidden="true" /> Scroll to explore</div>
       </section>
 
@@ -235,36 +299,40 @@ export default function FrontendPageClient({
         <section className="section-pad line-top">
           <div className="container-wide reveal">
             <div className="split-heading">
-              <div><div className="eyebrow">Limited time</div><h2 className="section-title">Active<br /><span style={{ color: "var(--lime)" }}>Offers.</span></h2></div>
+              <div><div className="eyebrow">Limited time</div><h2 className="section-title">Active<br /><span style={{ color: "var(--lime)", WebkitTextStroke: "2px var(--ink)" }}>Offers.</span></h2></div>
               <p className="section-copy">Grab these deals before they expire and get started for less.</p>
             </div>
             <div className="offer-grid">
-              {offers.slice(0, 3).map(o => (
-                <div key={o.id} className="offer-card" style={{ minHeight: 240 }}>
-                  {o.imageUrl && (
-                    <div className="offer-banner">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={o.imageUrl} alt={o.title} />
-                      <div className="offer-banner-shade" />
-                      {o.discountValue != null && (
-                        <span className="offer-badge">
+              {offers.slice(0, 3).map(o => {
+                const href = o.planId ? `/pay?planId=${o.planId}&offerId=${o.id}` : `/pay?offerId=${o.id}`;
+                return (
+                  <Link key={o.id} href={href} className="offer-card" style={{ minHeight: 240 }}>
+                    {o.imageUrl && (
+                      <div className="offer-banner">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={o.imageUrl} alt={o.title} />
+                        <div className="offer-banner-shade" />
+                        {o.discountValue != null && (
+                          <span className="offer-badge">
+                            {o.discountType === "PERCENT" ? `${o.discountValue}% OFF` : `₹${o.discountValue} OFF`}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="offer-body">
+                      {o.imageUrl == null && o.discountValue != null && (
+                        <span className="offer-badge offer-badge-floating">
                           {o.discountType === "PERCENT" ? `${o.discountValue}% OFF` : `₹${o.discountValue} OFF`}
                         </span>
                       )}
+                      <h3>{o.title}</h3>
+                      {o.description && <p>{o.description}</p>}
+                      {o.endDate && <p className="offer-date">Valid till {fmtDate(o.endDate)}</p>}
+                      <p className="offer-cta">Claim offer →</p>
                     </div>
-                  )}
-                  <div className="offer-body">
-                    {o.imageUrl == null && o.discountValue != null && (
-                      <span className="offer-badge offer-badge-floating">
-                        {o.discountType === "PERCENT" ? `${o.discountValue}% OFF` : `₹${o.discountValue} OFF`}
-                      </span>
-                    )}
-                    <h3>{o.title}</h3>
-                    {o.description && <p>{o.description}</p>}
-                    {o.endDate && <p className="offer-date">Valid till {fmtDate(o.endDate)}</p>}
-                  </div>
-                </div>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -287,7 +355,7 @@ export default function FrontendPageClient({
       <section id="why-us" className="section-pad line-top">
         <div className="container-wide reveal">
           <div className="split-heading">
-            <div><div className="eyebrow">The One Stop difference</div><h2 className="section-title">More than a<br /><span style={{ color: "var(--lime)" }}>membership.</span></h2></div>
+            <div><div className="eyebrow">{site.sections.whyUs}</div><h2 className="section-title">More than a<br /><span style={{ color: "var(--lime)", WebkitTextStroke: "2px var(--ink)" }}>membership.</span></h2></div>
             <p className="section-copy">The best training space is the one that makes discipline feel natural. Since 2002, we have built exactly that in the heart of Lucknow.</p>
           </div>
           <div className="why-grid">
@@ -313,7 +381,7 @@ export default function FrontendPageClient({
       <section id="services" className="section-pad services-band">
         <div className="container-wide reveal">
           <div className="split-heading">
-            <div><div className="eyebrow">Your training, expanded</div><h2 className="section-title">Every tool.<br /><span style={{ color: "var(--lime)" }}>One floor.</span></h2></div>
+            <div><div className="eyebrow">Your training, expanded</div><h2 className="section-title">Every tool.<br /><span style={{ color: "var(--lime)", WebkitTextStroke: "2px var(--ink)" }}>One floor.</span></h2></div>
             <p className="section-copy">From your first lift to your hundredth class, choose the kind of work that keeps you coming back.</p>
           </div>
           <div className="services-grid">
@@ -342,12 +410,24 @@ export default function FrontendPageClient({
             </div>
             <div>
               <div className="class-list">
-                {classes.map((name, i) => (
-                  <article className="class-card" key={name}>
-                    <h3>{name}</h3>
-                    <small>0{i + 1}</small>
-                  </article>
-                ))}
+                {schedule.length > 0 ? (
+                  schedule.slice(0, 12).map((c) => (
+                    <article className="class-card" key={c.id}>
+                      <h3>{c.name}</h3>
+                      <small>
+                        {DAY_NAMES_SHORT[c.dayOfWeek]} {c.startTime}
+                        {c.location ? ` · ${c.location}` : ""}
+                      </small>
+                    </article>
+                  ))
+                ) : (
+                  ["Zumba", "Aerobics", "Spinning", "Yoga", "Martial Arts", "Conditioning"].map((name) => (
+                    <article className="class-card" key={name}>
+                      <h3>{name}</h3>
+                      <small>TBD</small>
+                    </article>
+                  ))
+                )}
               </div>
               <div className="classes-aside">
                 <span className="eyebrow">Class schedule / all levels</span>
@@ -371,13 +451,13 @@ export default function FrontendPageClient({
           {plans.length > 0 ? (
             <div className="plans-grid">
               {plans.slice(0, 3).map((plan, i) => {
-                const msg = `Hi ONE STOP FITNESS, I'm interested in the ${plan.name} plan (₹${plan.price}/month). Please share details.`;
+                const msg = site.messages.planInquiry(plan.name, plan.price, planPeriodLabel(plan.durationDays));
                 return (
                   <article className={`plan-card${i === 1 ? " featured" : ""}`} key={plan.id}>
                     {i === 1 && <span className="plan-tag">Most popular</span>}
                     <h3>{plan.name}</h3>
                     <p>{plan.description}</p>
-                    <div className="plan-price">₹{plan.price.toLocaleString("en-IN")}<small>/ month</small></div>
+                    <div className="plan-price">₹{plan.price.toLocaleString("en-IN")}<small>/ {planPeriodLabel(plan.durationDays)}</small></div>
                     <ul>{plan.features.map(f => <li key={f}>{f}</li>)}</ul>
                     <PayNowButton plan={{ id: plan.id, name: plan.name, price: plan.price }} variant="light" />
                     <Link href={whatsappLink(msg)} target="_blank" rel="noreferrer" className={i === 1 ? "button-primary" : "button-outline"}>
@@ -388,8 +468,13 @@ export default function FrontendPageClient({
               })}
             </div>
           ) : (
-            <p style={{ color: "#8f9898", textAlign: "center", paddingTop: 40 }}>Plans coming soon — <Link href={whatsappLink()} target="_blank" rel="noreferrer" style={{ color: "var(--lime)" }}>ask us on WhatsApp</Link>.</p>
+            <p style={{ color: "#8f9898", textAlign: "center", paddingTop: 40 }}>Plans coming soon — <Link href={whatsappLink()} target="_blank" rel="noreferrer" style={{ color: "var(--lime)", WebkitTextStroke: "2px var(--ink)" }}>ask us on WhatsApp</Link>.</p>
           )}
+          <div style={{ marginTop: 56, textAlign: "center" }}>
+            <Link href="/pricing" className="button-primary" style={{ border: "2px solid #000" }}>
+              View All Plans
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -400,7 +485,7 @@ export default function FrontendPageClient({
             <div className="split-heading">
               <div>
                 <div className="eyebrow">Get involved</div>
-                <h2 className="section-title">Challenges &<br /><span style={{ color: "var(--lime)" }}>Competitions.</span></h2>
+                <h2 className="section-title">Challenges &<br /><span style={{ color: "var(--lime)", WebkitTextStroke: "2px var(--ink)" }}>Competitions.</span></h2>
               </div>
               <p className="section-copy">Join the challenge and earn your bragging rights.</p>
             </div>
@@ -420,6 +505,7 @@ export default function FrontendPageClient({
                   <div className="competition-body">
                     <h3 className="competition-title">{c.title}</h3>
                     {c.description && <p className="competition-desc">{c.description}</p>}
+                    {c.linkUrl && <CompetitionFormCta competition={c} />}
                     <div className="competition-meta">
                       <span className="competition-meta-item">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -443,15 +529,16 @@ export default function FrontendPageClient({
         <section id="gallery" className="section-pad">
           <div className="container-wide reveal">
             <div className="split-heading">
-              <div><div className="eyebrow">Inside One Stop</div><h2 className="section-title">A space with<br /><span style={{ color: "var(--lime)" }}>standards.</span></h2></div>
+              <div><div className="eyebrow">{site.sections.gallery}</div><h2 className="section-title">A space with<br /><span style={{ color: "var(--lime)", WebkitTextStroke: "2px var(--ink)" }}>standards.</span></h2></div>
               <p className="section-copy">Dark mornings. Bright ideas. Every corner designed to keep your attention on the work.</p>
             </div>
-            <div className="gallery-grid gallery-scroller">
+            <div className="gallery-grid">
               {gallery.slice(0, 4).map((img, i) => (
                 <figure className="gallery-item" key={img.imageUrl + i}>
                   {img.mediaType === "VIDEO" ? (
                     <video
                       src={img.imageUrl}
+                      poster={img.posterUrl ?? undefined}
                       muted
                       loop
                       playsInline
@@ -460,7 +547,11 @@ export default function FrontendPageClient({
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={img.imageUrl} alt={`${img.title} at One Stop Fitness`} />
+                    <img
+                      src={img.imageUrl}
+                      alt={`${img.title} at ${site.name}`}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
                   )}
                   <figcaption>
                     <span>{img.title}</span>
@@ -468,6 +559,11 @@ export default function FrontendPageClient({
                   </figcaption>
                 </figure>
               ))}
+            </div>
+            <div style={{ marginTop: 56, textAlign: "center" }}>
+              <Link href="/gallery" className="button-outline">
+                View All Photos
+              </Link>
             </div>
           </div>
         </section>
@@ -481,6 +577,7 @@ export default function FrontendPageClient({
               <div className="trainer-card founder-media">
                 {founder.profileImageUrl ? (
                   <ScrollZoom className="absolute inset-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={founder.profileImageUrl} alt={founder.name} />
                   </ScrollZoom>
                 ) : (
@@ -490,14 +587,14 @@ export default function FrontendPageClient({
                 )}
                 <div className="trainer-info">
                   <h3>{founder.name}</h3>
-                  <p>Founder · ONE STOP FITNESS</p>
+                  <p>{founder.specialization || "Founder"} · {site.name}</p>
                 </div>
               </div>
               <div>
                 <div className="eyebrow">Meet the founder</div>
                 <h2 className="section-title" style={{ marginTop: 12 }}>{founder.name}<br /><span style={{ color: "var(--gold)" }}>leads the way.</span></h2>
                 <p className="section-copy" style={{ marginTop: 20 }}>
-                  {founder.founderNote ?? "A fitness champion turned coach, Deepak built ONE STOP FITNESS to give Lucknow a training floor where discipline meets modern science."}
+                  {founder.founderNote ?? site.ownerFallbackBio}
                 </p>
                 {founder.founderTitles.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 24 }}>
@@ -525,34 +622,22 @@ export default function FrontendPageClient({
               <div><div className="eyebrow">The people behind the push</div><h2 className="section-title">Good work<br /><span style={{ color: "var(--gold)" }}>needs guidance.</span></h2></div>
               <p className="section-copy">Our trainers bring experience, curiosity, and an eye for the small adjustment that changes everything.</p>
             </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredTrainers.map((trainer, i) => (
-                <Reveal key={trainer.id} delay={i * 90} className="h-full">
-                  <div className="panel h-full p-6 text-center">
-                    <div className="relative mx-auto aspect-square w-full max-w-[170px] overflow-hidden rounded-full border-2 border-gym-lime/45 shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_0_26px_rgba(154,217,1,0.2)]">
-                      {trainer.profileImageUrl ? (
-                        <Image
-                          src={trainer.profileImageUrl}
-                          alt={trainer.name}
-                          fill
-                          sizes="170px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gym-lime/12 font-anton text-5xl text-gym-lime">
-                          {trainer.name.charAt(0)}
-                        </div>
-                      )}
+            <div className="team-grid">
+              {featuredTrainers.slice(0, 3).map(t => (
+                <article className="trainer-card" key={t.id}>
+                  {t.profileImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={t.profileImageUrl} alt={`${t.name}, ${t.specialization} at ${site.name}`} />
+                  ) : (
+                    <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", background: "rgba(200,255,40,.08)", fontSize: 72, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, color: "var(--lime)" }}>
+                      {t.name.charAt(0)}
                     </div>
-                    <h3 className="font-anton mt-5 text-xl uppercase leading-tight text-white">
-                      {trainer.name}
-                    </h3>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-gym-lime">
-                      {trainer.specialization}
-                    </p>
-                    <p className="mt-3 text-sm text-white/55">{trainer.bio}</p>
+                  )}
+                  <div className="trainer-info">
+                    <h3>{t.name}</h3>
+                    <p>{t.specialization}</p>
                   </div>
-                </Reveal>
+                </article>
               ))}
             </div>
           </div>
@@ -569,7 +654,7 @@ export default function FrontendPageClient({
       <section id="contact" className="section-pad contact-section">
         <div className="container-wide reveal">
           <div className="split-heading contact-heading">
-            <div><div className="eyebrow">Make your move</div><h2 className="section-title">The floor is<br /><span style={{ color: "var(--lime)" }}>waiting.</span></h2></div>
+            <div><div className="eyebrow">Make your move</div><h2 className="section-title">The floor is<br /><span style={{ color: "var(--lime)", WebkitTextStroke: "2px var(--ink)" }}>waiting.</span></h2></div>
             <p className="section-copy">Drop in for a tour, ask a question, or make your first session official. Our team is ready.</p>
           </div>
           <div className="contact-layout">
@@ -595,7 +680,7 @@ export default function FrontendPageClient({
                   <a href={`https://wa.me/${site.whatsappNumber}`} target="_blank" rel="noreferrer">{site.phoneDisplay}</a>
                 </div>
               </div>
-              <Link href={whatsappLink("Hi ONE STOP FITNESS, I'd like to book a facility tour.")} target="_blank" rel="noreferrer" className="button-primary contact-cta">
+              <Link href={whatsappLink(site.messages.tourBooking)} target="_blank" rel="noreferrer" className="button-primary contact-cta">
                 Book a facility tour
               </Link>
             </div>
@@ -609,11 +694,11 @@ export default function FrontendPageClient({
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="ONE STOP FITNESS location — Sheela Garden, Rajajipuram, Lucknow"
+                title={`${site.name} location — ${site.addressShort}`}
               />
               <div className="map-caption">
                 <span className="map-caption-name">{site.name}</span>
-                <span className="map-caption-addr">Rajajipuram, Lucknow · 226017</span>
+                <span className="map-caption-addr">{site.addressShort} · {site.pincode}</span>
               </div>
               <a href={site.mapsUrl} target="_blank" rel="noreferrer" className="map-open-btn">
                 Open in Maps ↗
@@ -625,3 +710,4 @@ export default function FrontendPageClient({
     </div>
   );
 }
+

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { site } from "@/data/site";
+import { site, brandParts, establishedLine } from "@/data/site";
 import Icon from "./Icon";
 
 const quickLinks = [
@@ -24,14 +24,14 @@ export default function Footer() {
               <Icon name="dumbbell" className="h-5 w-5" />
             </span>
             <span className="font-anton text-lg uppercase tracking-wide text-white">
-              ONE STOP<span className="glow-lime">&nbsp;FITNESS</span>
+              {brandParts().word1}<span className="glow-lime">&nbsp;{brandParts().word2}</span>
             </span>
           </Link>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/50">
             {site.tagline}. Established {site.established}. {site.mission}.
           </p>
           <p className="mt-3 text-xs uppercase tracking-[0.25em] text-gym-lime">
-            Since 2002 · Lucknow
+            {establishedLine()}
           </p>
         </div>
 

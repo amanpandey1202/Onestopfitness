@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { whatsappLink } from "@/data/site";
+import { whatsappLink, site } from "@/data/site";
 
 /**
  * No backend — testimonials are sent straight to the gym's WhatsApp
@@ -14,7 +14,7 @@ export default function TestimonialForm() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const text = `Hi ONE STOP FITNESS! I'd like to share my experience:\n\n"${message}"\n\n— ${name || "A member"}`;
+    const text = site.messages.testimonial(message, name);
     window.open(whatsappLink(text), "_blank", "noopener,noreferrer");
     setSent(true);
   }

@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=DM+Sans:wght@400;500;700&family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap");
+@import "tailwindcss";
 
 :root {
   --font-anton: "Anton", "Impact", "Trebuchet MS", sans-serif;
@@ -10,23 +10,184 @@
 }
 
 @theme {
-  /* Brand palette — high-contrast dark + electric lime (from the premium Vercel site) */
-  --color-gym-black: #141414;
-  --color-gym-ink: #0d0d0d;
+  /* ============================================================
+     "gym OS" design system — dark premium, neutral black charcoal
+     surfaces, electric-lime signature accent. Neutral surfaces are
+     intentionally non-green so the UI reads clean black; lime stays
+     as the single brand accent.
+     ============================================================ */
+
+  /* Canvas + layered surfaces (neutral black charcoal) */
+  --color-gym-black: #101010;
+  --color-gym-ink: #151515;
+  /* semantic surface tokens */
+  --color-surface-1: #161616;
+  --color-surface-2: #1d1d1d;
+  --color-surface-3: #1a1a1a;
+  --color-background: #0c0c0c;
+  --color-foreground: #f5f5f5;
+  --color-card: #1d1d1d;
+  --color-card-foreground: #f5f5f5;
+  --color-popover: #161616;
+  --color-popover-foreground: #f5f5f5;
+
+  /* Signature accent — electric lime #9ad901 (kept) */
   --color-gym-lime: #9ad901;
   --color-gym-lime-soft: #b6ff2e;
-  --color-gym-lime-dim: #6f9c00;
+  --color-gym-lime-dim: #71a303;
+  --color-primary: #9ad901;
+  --color-primary-foreground: #0c0c0c;
+  --color-accent: #9ad901;
+  --color-accent-foreground: #0c0c0c;
+  --color-ring: #9ad901;
+
+  /* Secondary accent — electric cyan #38bdf8 */
+  --color-secondary: #38bdf8;
+  --color-secondary-foreground: #101d24;
+  --color-gym-cyan: #38bdf8;
+
+  /* Text ramp */
+  --color-muted: #262626;
+  --color-muted-foreground: #a6a6a6;
+  --color-faint: #7a7a7a;
+
+  /* Semantic tones */
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #2b0d0d;
+  --color-info: #60a5fa;
+
+  /* Legacy neutrals (kept for backward-compat) */
   --color-gym-grey: #cccccc;
   --color-gym-muted: #9ca3af;
 
+  /* Borders / inputs */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-input: rgba(255, 255, 255, 0.1);
+
+  /* Gradients */
+  --gradient-surface: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0) 42%
+  );
+  --gradient-accent: linear-gradient(
+    135deg,
+    #9ad901,
+    #38bdf8
+  );
+
+  /* Charts */
+  --color-chart-1: #9ad901;
+  --color-chart-2: #38bdf8;
+  --color-chart-3: #f87171;
+  --color-chart-4: #fbbf24;
+
+  /* Fonts (from next/font variables in layout.tsx) */
   --font-display: var(--font-anton);
   --font-body: var(--font-poppins);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-space-mono);
+  --font-section: var(--font-barlow);
 
+  /* Radius scale */
+  --radius-sm: calc(0.75rem - 4px);
+  --radius-md: calc(0.75rem - 2px);
+  --radius-lg: 0.75rem;
+  --radius-xl: calc(0.75rem + 4px);
+  --radius-2xl: calc(0.75rem + 8px);
+  --radius-3xl: calc(0.75rem + 12px);
+
+  /* Shadows */
   --shadow-glow: 0 0 20px 0px rgba(154, 217, 1, 0.6);
   --shadow-glow-sm: 0 0 12px 0px rgba(154, 217, 1, 0.45);
-  --shadow-card: 0 0 20px 0px rgba(20, 20, 20, 0.85);
+  --shadow-card:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 30px -12px rgba(0, 0, 0, 0.6);
+  --shadow-lift:
+    0 0 0 1px rgba(154, 217, 1, 0.35),
+    0 12px 34px -14px rgba(154, 217, 1, 0.6);
 
   --animate-fade-up: fade-up 0.6s ease both;
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ============================================================
+   "gym OS" utility components (port of Lovable utilities)
+   ============================================================ */
+
+/* Layered card surface */
+@utility surface-card {
+  background-color: var(--color-surface-2);
+  background-image: var(--gradient-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-card);
+}
+
+/* Frosted glass bar (sticky nav / headers / modals) */
+@utility glass-bar {
+  background-color: color-mix(in oklab, var(--color-surface-1) 78%, transparent);
+  backdrop-filter: blur(14px);
+  border-color: var(--color-border);
+}
+
+/* Interactive lift + accent glow on hover */
+@utility lift {
+  transition:
+    transform 200ms var(--ease-out-expo),
+    border-color 200ms var(--ease-out-expo),
+    box-shadow 200ms var(--ease-out-expo);
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+/* Tabular data numerals (Space Mono, no width jitter) */
+@utility stat-num {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+/* Tiny uppercase label */
+@utility label-kicker {
+  font-size: 12px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  color: var(--color-muted-foreground);
+}
+
+/* Condensed uppercase section title (Barlow) — sporty premium */
+@utility heading-condensed {
+  font-family: var(--font-section), "Arial Narrow", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+}
+
+/* Animated skeleton shimmer */
+@utility skeleton {
+  background-color: var(--color-surface-3);
+  border-radius: var(--radius-md);
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 @keyframes fade-up {
@@ -188,13 +349,40 @@ body {
    auth screens all read as one deliberate design.
    ============================================================ */
 
-/* Big bold italic condensed display type */
+/* Big bold condensed display type.
+   Anton ships a single 400 weight with NO italic face, so applying
+   font-style: italic or font-weight: 600/700 makes the browser fake it
+   (slant + stretch), which distorts the glyphs. We pin weight 400 and
+   normal style everywhere Anton is used — the preview design resolves. */
 .font-anton {
   font-family: var(--font-anton), Impact, "Haettenschweiler",
     "Arial Narrow", sans-serif;
-  font-style: italic;
+  font-style: normal;
   font-weight: 400;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+}
+
+/* Tailwind v4 generates .font-display from --font-display (Anton). This
+   unlayered override beats the layered `font-bold`/`italic` utilities, so
+   every `font-display … font-bold` combination renders crisp 400 instead
+   of faux-bold. */
+.font-display {
+  font-family: var(--font-display), Impact, "Haettenschweiler",
+    "Arial Narrow", sans-serif;
+  font-style: normal;
+  font-weight: 400;
+}
+
+/* Preview's ".pht" recipe — uppercase Anton display heading with tight
+   leading. Use it for page titles / section headings. */
+.heading-display {
+  font-family: var(--font-anton), Impact, "Haettenschweiler",
+    "Arial Narrow", sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* Glowing lime accent for display text */
@@ -431,7 +619,8 @@ body {
 /* Stat numerals */
 .stat-num {
   font-family: var(--font-anton), Impact, sans-serif;
-  font-style: italic;
+  font-style: normal;
+  font-weight: 400;
   color: var(--color-gym-lime);
   text-shadow: 0 0 26px rgba(154, 217, 1, 0.4);
 }

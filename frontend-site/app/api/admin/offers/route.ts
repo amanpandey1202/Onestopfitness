@@ -8,7 +8,10 @@ import { logAudit } from "@/lib/audit";
 export async function GET() {
   try {
     await requireAdmin();
-    const offers = await prisma.offer.findMany({ orderBy: { createdAt: "desc" } });
+    const offers = await prisma.offer.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { plan: { select: { id: true, name: true } } },
+    });
     return ok({ offers });
   } catch (error) {
     return fail(error);
@@ -28,6 +31,7 @@ export async function POST(req: NextRequest) {
         discountValue: data.discountValue,
         discountType: data.discountType,
         imageUrl: data.imageUrl,
+        planId: data.planId,
         startDate: data.startDate,
         endDate: data.endDate,
         isActive: data.isActive,

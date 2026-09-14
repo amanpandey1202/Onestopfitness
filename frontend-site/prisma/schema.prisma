@@ -9,6 +9,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ---------------------------------------------------------------------------
@@ -61,6 +62,8 @@ model User {
   // Email verification: one-time token + expiry (separate from reset).
   verifyToken     String?
   verifyTokenExpires DateTime?
+  // FCM push notification token — registered from Android app, cleared on logout.
+  deviceToken     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -163,6 +166,7 @@ model MembershipPlan {
 
   memberships Membership[]
   payments    Payment[]
+  offers      Offer[]       @relation("OfferPlan")
 
   @@index([isActive])
 }
@@ -221,16 +225,19 @@ model Payment {
   method       String?       // card/upi/netbanking — filled by Razorpay
   memberId     String
   planId       String
+  offerId      String?       // which offer (if any) discounted this payment
   membershipId String?       // created membership once verified
   createdAt    DateTime      @default(now())
   paidAt       DateTime?
 
   member User           @relation(fields: [memberId], references: [id], onDelete: Cascade)
   plan   MembershipPlan @relation(fields: [planId], references: [id])
+  offer  Offer?         @relation("PaymentOffer", fields: [offerId], references: [id])
 
   @@index([memberId])
   @@index([status])
   @@index([paidAt])
+  @@index([offerId])
 }
 
 // ---------------------------------------------------------------------------
@@ -269,7 +276,7 @@ model DietPlan {
   trainerId   String?
   title       String
   description String?
-  goal        String?    // e.g. "Fat loss", "Muscle gain", "Maintenance"
+  goal        String?    // e.g. "Fat Loss", "Muscle Gain", "Maintenance", "Athletic Performance"
   calorieTarget Int?     // daily calorie target
   proteinGm   Int?       // daily protein target in grams
   carbsGm     Int?
@@ -292,11 +299,14 @@ model DietMeal {
   timing     String?  // "7:00 AM", "Before training", etc.
   items      String   // JSON array of { name, quantity, calories } — kept simple
   calories   Int?
+  // Day-of-week the meal applies to: 0=Sunday … 6=Saturday. Null = every day.
+  dayOfWeek  Int?
   orderIndex Int      @default(0)
 
   dietPlan DietPlan @relation(fields: [dietPlanId], references: [id], onDelete: Cascade)
 
   @@index([dietPlanId])
+  @@index([dayOfWeek])
 }
 
 // ---------------------------------------------------------------------------
@@ -411,6 +421,7 @@ model GalleryImage {
   imageUrl        String
   mediaType       String   @default("IMAGE")
   storagePublicId String?
+  posterUrl       String?
   isPublished     Boolean  @default(true)
   createdById     String?
   createdAt       DateTime @default(now())
@@ -446,15 +457,19 @@ model Offer {
   discountValue Int?
   discountType  String? // PERCENT | AMOUNT
   imageUrl      String?
+  planId        String?   // optional binding to a specific membership plan
   startDate     DateTime?
   endDate       DateTime?
   isActive      Boolean   @default(true)
   createdById   String?
   createdAt     DateTime  @default(now())
 
-  createdBy User? @relation("OfferCreatedBy", fields: [createdById], references: [id])
+  createdBy User?             @relation("OfferCreatedBy", fields: [createdById], references: [id])
+  plan      MembershipPlan?   @relation("OfferPlan", fields: [planId], references: [id])
+  payments  Payment[]         @relation("PaymentOffer")
 
   @@index([isActive])
+  @@index([planId])
 }
 
 model Competition {
@@ -462,6 +477,8 @@ model Competition {
   title           String
   description     String?
   bannerUrl       String?
+  linkUrl         String?
+  clickCount      Int               @default(0)
   startDate       DateTime?
   endDate         DateTime?
   maxParticipants Int?

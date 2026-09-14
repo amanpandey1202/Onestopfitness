@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
         { member: { name: { contains: search } } },
         { member: { email: { contains: search } } },
         { plan: { name: { contains: search } } },
+        { offer: { title: { contains: search } } },
       ];
     }
 
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
           include: {
             member: { select: { id: true, name: true, email: true, phone: true, memberCode: true } },
             plan: { select: { id: true, name: true, price: true } },
+            offer: { select: { id: true, title: true } },
           },
           orderBy: { createdAt: "desc" },
           take: 100,

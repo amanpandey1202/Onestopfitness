@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 
@@ -70,13 +69,11 @@ export default function GalleryCarousel({
                 className="h-full w-full bg-black object-cover"
               />
             ) : (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={current.imageUrl}
                 alt={current.title}
-                fill
-                sizes="(min-width:1024px) 90vw, 100vw"
-                priority={index === 0}
-                className="object-cover"
+                className="h-full w-full object-cover"
               />
             )}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20" />

@@ -1,13 +1,15 @@
-import PageHeroFrontend from "@/components-frontend/PageHero.frontend";
-import PricingCardFrontend from "@/components-frontend/PricingCard.frontend";
+import PageHeaderFrontend from "@/components-frontend/PageHeader.frontend";
 import WhatsAppButtonFrontend from "@/components-frontend/WhatsAppButton.frontend";
+import Icon from "@/components-frontend/Icons.frontend";
 import Reveal from "@/components/Reveal";
+import PayNowButton from "@/components/PayNowButton";
+import { whatsappLink, site } from "@/data/site";
+import { planPeriodLabel } from "@/lib/format";
 import { getActivePlans } from "@/lib/services/public";
 
 export const metadata = {
-  title: "Pricing — ONE STOP FITNESS",
-  description:
-    "Transparent monthly gym pricing in Lucknow: Cardio ₹1500, Weight Training ₹1000, Martial Arts ₹1200, Personal Training ₹2000, Combo ₹2200.",
+  title: `Pricing — ${site.name}`,
+  description: site.seo.description,
 };
 
 export const dynamic = "force-dynamic";
@@ -17,47 +19,105 @@ export default async function FrontendPricingPage() {
 
   return (
     <>
-      <PageHeroFrontend
+      <PageHeaderFrontend
         kicker="Pricing"
-        title="Simple, Honest Rates"
+        title="Simple, Honest"
+        highlight="Rates."
         subtitle="No hidden charges. Pick a plan, tap the WhatsApp button and we'll finalise your joining in minutes."
       />
 
-      <section className="section mx-auto max-w-7xl">
-        {plans.length === 0 ? (
-          <p className="py-16 text-center text-white/50">
-            Plans are being finalised — message us on WhatsApp for current rates.
-          </p>
-        ) : (
-          <div className="mt-2 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {plans.map((plan, i) => (
-              <Reveal key={plan.id} delay={i * 90} className="h-full">
-                <PricingCardFrontend
-                  plan={plan}
-                  featured={i === 1}
-                  tag={i === 1 ? "Most Popular" : undefined}
-                />
-              </Reveal>
-            ))}
+      <section className="pricing-section section-pad">
+        <div className="container-wide">
+          <div className="pricing-head">
+            <div>
+              <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                Membership plans
+              </div>
+              <h2 className="section-title" style={{ marginTop: 18 }}>
+                Choose your<br />
+                <span style={{ color: "var(--lime)", WebkitTextStroke: "2px var(--ink)" }}>plan.</span>
+              </h2>
+            </div>
+            <p className="section-copy">
+              Every plan includes full gym-floor access, all group classes and the {site.name} member app. Pay
+              online or finish your joining on WhatsApp — no hidden charges.
+            </p>
           </div>
-        )}
 
-        {/* NOTE */}
-        <Reveal delay={140}>
-          <div className="panel mt-14 overflow-hidden p-8 text-center sm:p-10">
-          <div className="pointer-events-none absolute -top-20 left-1/2 h-40 w-96 -translate-x-1/2 rounded-full bg-gym-lime/12 blur-3xl" />
-          <h3 className="font-anton relative text-3xl uppercase leading-none text-gym-lime">
-            Want a custom plan?
-          </h3>
-          <p className="relative mx-auto mt-3 max-w-xl text-sm text-white/65">
-            Monthly, quarterly or yearly? Group classes with your plan? Message
-            us and we&apos;ll build the best combination for you.
-          </p>
-          <div className="relative mt-7 flex justify-center">
-            <WhatsAppButtonFrontend label="Ask About Custom Plans" />
-          </div>
+          {plans.length === 0 ? (
+            <p className="py-16 text-center" style={{ color: "var(--ink)" }}>
+              Plans are being finalised — message us on WhatsApp for current rates.
+            </p>
+          ) : (
+            <div className="plans-grid">
+              {plans.map((plan, i) => {
+                const featured = i === 1;
+                const message = site.messages.planInquiry(
+                  plan.name,
+                  plan.price,
+                  planPeriodLabel(plan.durationDays)
+                );
+                return (
+                  <Reveal key={plan.id} delay={i * 90} className="h-full">
+                    <article className={`plan-card ${featured ? "featured" : ""}`}>
+                      {featured && <div className="plan-tag">Most Popular</div>}
+                      <h3>{plan.name}</h3>
+                      {plan.description && <p>{plan.description}</p>}
+                      <div className="plan-price">
+                        ₹{plan.price.toLocaleString("en-IN")}
+                        <small>/ {planPeriodLabel(plan.durationDays)}</small>
+                      </div>
+                      <ul>
+                        {plan.features.map((f) => (
+                          <li key={f}>{f}</li>
+                        ))}
+                      </ul>
+                      <PayNowButton
+                        plan={{ id: plan.id, name: plan.name, price: plan.price }}
+                        variant="light"
+                      />
+                      <div style={{ marginTop: 12 }}>
+                        <a
+                          href={whatsappLink(message)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="button-outline"
+                        >
+                          <Icon name="whatsapp" className="h-[1.1rem] w-[1.1rem]" />
+                          Ask on WhatsApp
+                        </a>
+                      </div>
+                    </article>
+                  </Reveal>
+                );
+              })}
+            </div>
+          )}
         </div>
-        </Reveal>
+      </section>
+
+      {/* Custom plan CTA */}
+      <section className="section-pad" style={{ textAlign: "center" }}>
+        <div className="container-wide">
+          <Reveal>
+            <div className="eyebrow" style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
+              Custom plans
+            </div>
+            <h2 className="section-title" style={{ marginTop: 18 }}>
+              Want a&nbsp;<span style={{ color: "var(--lime)" }}>custom</span>&nbsp;plan?
+            </h2>
+            <p
+              className="section-copy"
+              style={{ marginTop: 22, marginLeft: "auto", marginRight: "auto", maxWidth: 560 }}
+            >
+              Monthly, quarterly or yearly? Group classes bundled with your plan? Message us and we&apos;ll build the
+              best combination for you.
+            </p>
+            <div style={{ marginTop: 34 }}>
+              <WhatsAppButtonFrontend label="Ask About Custom Plans" />
+            </div>
+          </Reveal>
+        </div>
       </section>
     </>
   );

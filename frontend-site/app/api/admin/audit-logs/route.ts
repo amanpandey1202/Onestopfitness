@@ -7,11 +7,21 @@ export async function GET(req: NextRequest) {
   try {
     await requireAdmin();
     const url = new URL(req.url);
-    const take = Math.min(Number(url.searchParams.get("limit") ?? 50), 200);
+    const raw = Number(url.searchParams.get("limit"));
+    const take = Number.isFinite(raw) ? Math.min(Math.max(Math.floor(raw), 1), 200) : 50;
     const logs = await prisma.auditLog.findMany({
+      where: {},
       orderBy: { createdAt: "desc" },
       take,
-      include: { actor: { select: { name: true, email: true, role: true } } },
+      select: {
+        id: true,
+        action: true,
+        entityType: true,
+        entityId: true,
+        metadata: true,
+        createdAt: true,
+        actor: { select: { name: true, email: true, role: true } },
+      },
     });
     return ok({ logs });
   } catch (error) {

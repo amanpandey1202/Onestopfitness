@@ -4,25 +4,15 @@ import HeaderFrontend from "@/components-frontend/Header.frontend";
 import FooterFrontend from "@/components-frontend/Footer.frontend";
 import WhatsAppFloatFrontend from "@/components-frontend/WhatsAppFloat.frontend";
 import ScrollChrome from "@/components/ScrollChrome";
+import { site } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "ONE STOP FITNESS — Lucknow's #1 Gym | Be Your Best",
-  description:
-    "Cardio, Weight Training, Martial Arts, Personal Training & group classes in Rajajipuram, Lucknow. Join ONE STOP FITNESS and Be Your Best.",
-  keywords: [
-    "gym in Lucknow",
-    "ONE STOP FITNESS",
-    "fitness center Lucknow",
-    "cardio",
-    "weight training",
-    "martial arts",
-    "personal training",
-    "Rajajipuram gym",
-  ],
+  title: site.seo.title,
+  description: site.seo.description,
+  keywords: site.seo.keywords,
   openGraph: {
-    title: "ONE STOP FITNESS — Be Your Best",
-    description:
-      "Lucknow's premium fitness center. Cardio, Weight Training, Martial Arts, Personal Training. Since 2002.",
+    title: site.seo.ogTitle,
+    description: site.seo.ogDescription,
     type: "website",
   },
 };

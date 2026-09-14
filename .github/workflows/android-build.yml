@@ -1,0 +1,51 @@
+﻿name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Setup Java (Android SDK requires Java 17)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Install dependencies
+      working-directory: ./frontend-site
+      run: npm install
+
+    - name: Build Next.js
+      working-directory: ./frontend-site
+      run: npm run build
+
+    - name: Sync Capacitor to Android
+      working-directory: ./frontend-site
+      run: npx cap sync android
+
+    - name: Make Gradle executable
+      working-directory: ./frontend-site/android
+      run: chmod +x ./gradlew
+
+    - name: Compile APK
+      working-directory: ./frontend-site/android
+      run: ./gradlew assembleDebug
+
+    - name: Upload APK Download Link
+      uses: actions/upload-artifact@v4
+      with:
+        name: gym-app-debug.apk
+        path: frontend-site/android/app/build/outputs/apk/debug/app-debug.apk

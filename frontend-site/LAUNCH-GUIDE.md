@@ -1,4 +1,4 @@
-# 🚀 Launch Guide — OneStopFitness
+# 🚀 Launch Guide — gymbrand
 
 Everything you need to take the site from localhost to a real, live website —
 including the database choice and the Airtable/Excel auto-sync.
@@ -150,19 +150,19 @@ you own a verified domain** for sending.
   returns `403 — domain not verified` until you finish the steps below.
 
 ### When you buy the domain / plan — do this
-1. On your Domain provider (where you bought `onestopfit.in`), keep the DNS
+1. On your Domain provider (where you bought `gymbrand.com`), keep the DNS
    panel handy — you'll paste records there.
-2. Go to **https://resend.com/domains** → **Add Domain** → enter `onestopfit.in`.
+2. Go to **https://resend.com/domains** → **Add Domain** → enter `gymbrand.com`.
 3. Resend shows 3 DNS records (SPF, DKIM + one verification record). Copy them
    into your domain's DNS settings at the domain provider.
 4. Return to Resend → click **Verify**. Wait for status **Verified**.
 5. Tell me — I'll re-run the test send to `amanpandey8162@gmail.com` and confirm.
 
 ### Also remember when going live
-- `EMAIL_FROM` in `.env` is `ONE STOP FITNESS <noreply@onestopfit.in>` — uses the
+- `EMAIL_FROM` in `.env` is `GYM BRAND <noreply@gymbrand.com>` — uses the
   verified domain, so leave it.
 - `NEXT_PUBLIC_SITE_URL` must be your **real live URL** (e.g.
-  `https://onestopfit.in`), **not** `http://localhost:3000` — otherwise the
+  `https://gymbrand.com`), **not** `http://localhost:3000` — otherwise the
   reset/verification links in emails point to your laptop.
 
 ---
@@ -180,7 +180,7 @@ AIRTABLE_TOKEN        → pat...
 AIRTABLE_BASE_ID      → app...
 AIRTABLE_TABLE_ID     → tbl...
 RESEND_API_KEY        → re_... (already set ✓)
-EMAIL_FROM            → ONE STOP FITNESS <noreply@onestopfit.in>
+EMAIL_FROM            → GYM BRAND <noreply@gymbrand.com>
 ```
 
 ---
@@ -192,6 +192,6 @@ EMAIL_FROM            → ONE STOP FITNESS <noreply@onestopfit.in>
 - [ ] Upload a banner + one photo in admin → shows on homepage
 - [ ] Assign a test membership → row appears in Airtable
 - [ ] `NEXT_PUBLIC_SITE_URL` set correctly (WhatsApp links, OG image)
-- [ ] Verify `onestopfit.in` at **resend.com/domains** (see §7) so member emails deliver
+- [ ] Verify `gymbrand.com` at **resend.com/domains** (see §7) so member emails deliver
 - [ ] Send a test password-reset email to a real inbox and confirm it lands
 - [ ] Backup `prisma/dev.db` saved somewhere safe

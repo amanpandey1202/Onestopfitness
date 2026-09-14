@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Card, Field, Input, Spinner } from "@/components/admin/ui";
+import { Button, Card, Field, Input, Select, Spinner } from "@/components/admin/ui";
 import { formatDate } from "@/lib/format";
+import { fitnessGoalOptions } from "@/lib/goals";
+import PasswordInput from "@/components/auth/PasswordInput";
+import PasswordStrength from "@/components/auth/PasswordStrength";
 
 type ProfileData = {
-  user: { id: string; name: string; email: string; phone: string | null; profileImageUrl: string | null };
+  user: { id: string; name: string; email: string; phone: string | null; profileImageUrl: string | null; emailVerified: string | null };
   profile: { fitnessGoal: string | null; joiningDate: string | null } | null;
 };
 
@@ -24,6 +27,10 @@ export default function MemberProfilePage() {
   const [pwNotice, setPwNotice] = useState<string | null>(null);
   const [pwBusy, setPwBusy] = useState(false);
 
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
@@ -36,6 +43,7 @@ export default function MemberProfilePage() {
               email: me.email,
               phone: me.phone,
               profileImageUrl: me.profileImageUrl,
+              emailVerified: me.emailVerified,
             },
             profile: me.memberProfile ?? null,
           });
@@ -128,6 +136,45 @@ export default function MemberProfilePage() {
             <dt className="text-xs uppercase tracking-wide text-white/45">Member ID</dt>
             <dd className="mt-1 font-mono text-xs text-white/70">{data.user.id}</dd>
           </div>
+          {!data.user.emailVerified && (
+            <div className="sm:col-span-2 rounded-md border border-amber-400/30 bg-amber-500/10 px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-amber-300">
+                    Email not verified
+                  </p>
+                  <p className="mt-0.5 text-xs text-amber-200/60">
+                    Confirm your email to unlock the full member portal.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {verifyNotice && <span className="text-xs text-emerald-400">{verifyNotice}</span>}
+                  {verifyError && <span className="text-xs text-red-400">{verifyError}</span>}
+                  <Button
+                    variant="secondary"
+                    disabled={verifyBusy}
+                    onClick={async () => {
+                      setVerifyBusy(true);
+                      setVerifyNotice(null);
+                      setVerifyError(null);
+                      try {
+                        const res = await fetch("/api/auth/resend-verification", { method: "POST" });
+                        const body = await res.json();
+                        if (!res.ok) throw new Error(body.error || "Could not resend email");
+                        setVerifyNotice("Verification email sent!");
+                      } catch (e) {
+                        setVerifyError(e instanceof Error ? e.message : "Could not resend email");
+                      } finally {
+                        setVerifyBusy(false);
+                      }
+                    }}
+                  >
+                    {verifyBusy ? "Sending…" : "Resend email"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </dl>
       </Card>
 
@@ -138,7 +185,13 @@ export default function MemberProfilePage() {
             <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 …" />
           </Field>
           <Field label="Fitness goal">
-            <Input value={fitnessGoal} onChange={(e) => setFitnessGoal(e.target.value)} placeholder="e.g. Fat loss & strength" />
+            <Select value={fitnessGoal} onChange={(e) => setFitnessGoal(e.target.value)}>
+              {fitnessGoalOptions(fitnessGoal).map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </Select>
           </Field>
           {error && <p className="text-sm text-red-300">{error}</p>}
           {notice && <p className="text-sm text-gym-lime">{notice}</p>}
@@ -152,19 +205,17 @@ export default function MemberProfilePage() {
         <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white">Change Password</h2>
         <form onSubmit={changePassword} className="mt-4 space-y-4">
           <Field label="Current password">
-            <Input
-              type="password"
+            <PasswordInput
               required
               autoComplete="current-password"
               placeholder="••••••••"
-              minLength={1}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
             />
           </Field>
-          <Field label="New password" hint="Minimum 8 characters, with a letter, number and special character.">
-            <Input
-              type="password"
+
+          <Field label="New password">
+            <PasswordInput
               required
               autoComplete="new-password"
               placeholder="••••••••"
@@ -172,17 +223,25 @@ export default function MemberProfilePage() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
+            <PasswordStrength password={newPassword} />
           </Field>
+
           <Field label="Confirm new password">
-            <Input
-              type="password"
+            <PasswordInput
               required
               autoComplete="new-password"
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
+            {confirmPassword && newPassword !== confirmPassword && (
+              <p className="mt-1.5 text-xs text-red-400">Passwords do not match.</p>
+            )}
+            {confirmPassword && newPassword === confirmPassword && confirmPassword.length > 0 && (
+              <p className="mt-1.5 text-xs text-gym-lime">✓ Passwords match.</p>
+            )}
           </Field>
+
           {pwError && <p className="text-sm text-red-300">{pwError}</p>}
           {pwNotice && <p className="text-sm text-gym-lime">{pwNotice}</p>}
           <Button type="submit" disabled={pwBusy}>

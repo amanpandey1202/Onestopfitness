@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { fitnessGoalField } from "@/lib/goals";
 
 // Parses optional date strings from admin forms into a real Date (or null).
 const optionalDate = z
@@ -63,7 +64,7 @@ export const registerSchema = z.object({
       message: "Enter a valid phone number.",
     }),
   password: passwordSchema,
-  fitnessGoal: optionalString,
+  fitnessGoal: fitnessGoalField,
 });
 
 // ---------------------------------------------------------------------------
@@ -88,7 +89,7 @@ export const memberCreateSchema = z.object({
   email: z.string().email(),
   phone: optionalString,
   password: passwordSchema,
-  fitnessGoal: optionalString,
+  fitnessGoal: fitnessGoalField,
   planId: optionalString,
   notes: optionalString,
   joiningDate: optionalDate,
@@ -97,12 +98,13 @@ export const memberCreateSchema = z.object({
   address: optionalString,
   parentName: optionalString,
   parentPhone: optionalString,
+  emergencyContact: optionalString,
 });
 
 export const memberUpdateSchema = z.object({
   name: z.string().min(2).max(80).optional(),
   phone: optionalString,
-  fitnessGoal: optionalString,
+  fitnessGoal: fitnessGoalField,
   notes: optionalString,
   isActive: z.boolean().optional(),
   joiningDate: optionalDate,
@@ -111,6 +113,8 @@ export const memberUpdateSchema = z.object({
   address: optionalString,
   parentName: optionalString,
   parentPhone: optionalString,
+  emergencyContact: optionalString,
+  markEmailVerified: z.boolean().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -176,6 +180,7 @@ export const galleryCreateSchema = z.object({
   imageUrl: z.string().min(1),
   mediaType: z.enum(["IMAGE", "VIDEO"]).default("IMAGE"),
   storagePublicId: z.string().optional(),
+  posterUrl: optionalString,
   isPublished: z.boolean().default(true),
 });
 
@@ -193,18 +198,34 @@ export const bannerSchema = z.object({
 export const offerSchema = z.object({
   title: z.string().min(2).max(120),
   description: optionalString,
-  discountValue: z.number().int().min(0).optional(),
+  discountValue: z
+    .number()
+    .int()
+    .min(0)
+    .max(100000)
+    .refine((v) => v >= 0, "Discount must be 0 or more")
+    .optional(),
   discountType: z.enum(["PERCENT", "AMOUNT"]).optional(),
   imageUrl: optionalString,
+  planId: optionalString,
   startDate: optionalDate,
   endDate: optionalDate,
   isActive: z.boolean().default(true),
+}).superRefine((val, ctx) => {
+  if (val.discountType === "PERCENT" && val.discountValue != null && val.discountValue > 100) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["discountValue"],
+      message: "Percentage discount cannot exceed 100.",
+    });
+  }
 });
 
 export const competitionSchema = z.object({
   title: z.string().min(2).max(120),
   description: optionalString,
   bannerUrl: optionalString,
+  linkUrl: optionalString,
   startDate: optionalDate,
   endDate: optionalDate,
   maxParticipants: z.number().int().min(1).optional().nullable(),
@@ -239,6 +260,7 @@ export const galleryUpdateSchema = z.object({
   description: optionalString,
   imageUrl: optionalString,
   mediaType: z.enum(["IMAGE", "VIDEO"]).optional(),
+  posterUrl: optionalString,
   isPublished: optionalBool,
 });
 
@@ -256,18 +278,28 @@ export const bannerUpdateSchema = z.object({
 export const offerUpdateSchema = z.object({
   title: z.string().min(2).max(120).optional(),
   description: optionalString,
-  discountValue: z.number().int().min(0).optional(),
+  discountValue: z.number().int().min(0).max(100000).optional(),
   discountType: z.enum(["PERCENT", "AMOUNT"]).optional(),
   imageUrl: optionalString,
+  planId: optionalString,
   startDate: optionalDate,
   endDate: optionalDate,
   isActive: optionalBool,
+}).superRefine((val, ctx) => {
+  if (val.discountType === "PERCENT" && val.discountValue != null && val.discountValue > 100) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["discountValue"],
+      message: "Percentage discount cannot exceed 100.",
+    });
+  }
 });
 
 export const competitionUpdateSchema = z.object({
   title: z.string().min(2).max(120).optional(),
   description: optionalString,
   bannerUrl: optionalString,
+  linkUrl: optionalString,
   startDate: optionalDate,
   endDate: optionalDate,
   maxParticipants: z.number().int().min(1).optional().nullable(),

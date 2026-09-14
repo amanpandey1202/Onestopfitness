@@ -50,6 +50,22 @@ export async function createRazorpayOrder(opts: {
   return (await res.json()) as RazorpayOrder;
 }
 
+/** Fetches the current status of an order (used by cron reconciliation). */
+export async function getRazorpayOrderStatus(orderId: string): Promise<{
+  id: string;
+  status: string;
+  amount_paid: number;
+}> {
+  const res = await fetch(`https://api.razorpay.com/v1/orders/${orderId}`, {
+    headers: { Authorization: basicAuth() },
+  });
+  if (!res.ok) {
+    throw new Error(`Razorpay order lookup failed: ${res.status}`);
+  }
+  const data = (await res.json()) as { id: string; status: string; amount_paid: number };
+  return { id: data.id, status: data.status, amount_paid: data.amount_paid };
+}
+
 /** Verifies a checkout signature — the proof that Razorpay really got the money. */
 export function verifyPaymentSignature(opts: {
   orderId: string;

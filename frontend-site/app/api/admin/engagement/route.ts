@@ -1,4 +1,5 @@
 import { Role } from "@prisma/client";
+import { site } from "@/data/site";
 import { requireAdmin } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
@@ -71,16 +72,18 @@ export async function GET() {
             : "ACTIVE"
           : "NONE";
 
-      // Classify real alerts
+      // Classify real alerts. Absentee counts ANY member who hasn't checked
+      // in for 14+ days — active, suspended or lapsed (they're still not
+      // coming, which is exactly what the dashboard number should show).
       let alert: AlertKind | null = null;
       if (membershipStatus === "ACTIVE" && daysUntilExpiry >= 0 && daysUntilExpiry <= 7) {
         alert = "expiry-soon";
       }
-      if (membershipStatus === "EXPIRED") {
-        alert = "expiry-crossed";
-      }
-      if (daysSinceLastCheckIn >= 14 && membershipStatus !== "EXPIRED") {
+      if (daysSinceLastCheckIn >= 14) {
         alert = "absentee";
+      }
+      if (membershipStatus === "EXPIRED" && alert !== "absentee") {
+        alert = "expiry-crossed";
       }
       if (alert === null && daysSinceLastCheckIn >= 7) {
         alert = "at-risk";
@@ -109,7 +112,7 @@ export async function GET() {
       const whatsappUrl =
         digits.length >= 10
           ? `https://wa.me/${digits.startsWith("91") ? digits : "91" + digits}?text=${encodeURIComponent(
-              `Hi ${member.name}, this is ONE STOP FITNESS. ${summaryParts.join(", ")}. Can we help you get back on track?`
+              site.messages.engagementReach(member.name, summaryParts.join(", "))
             )}`
           : null;
 

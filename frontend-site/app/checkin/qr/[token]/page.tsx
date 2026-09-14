@@ -6,6 +6,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { site, brandParts } from "@/data/site";
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -13,7 +14,7 @@ interface Props {
 
 export default async function QrCheckinPage({ params }: Props) {
   const { token } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://onestopfitness-pink.vercel.app";
 
   let result: {
     success?: boolean;
@@ -49,7 +50,7 @@ export default async function QrCheckinPage({ params }: Props) {
     <div className="flex min-h-screen items-center justify-center bg-gym-black px-4 py-12">
       <div className="w-full max-w-sm text-center">
         <p className="font-anton text-xl uppercase tracking-widest text-white">
-          ONE STOP <span className="text-gym-lime">FITNESS</span>
+          {brandParts().word1} <span className="text-gym-lime">{brandParts().word2}</span>
         </p>
 
         {isSuccess && (
@@ -126,7 +127,7 @@ export default async function QrCheckinPage({ params }: Props) {
         )}
 
         <p className="mt-8 text-xs text-white/20">
-          ONE STOP FITNESS · Attendance via QR
+          {site.name} · Attendance via QR
         </p>
       </div>
     </div>

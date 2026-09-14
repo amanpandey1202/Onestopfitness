@@ -41,33 +41,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A user with this email already exists" }, { status: 409 });
     }
 
-    const trainer = await prisma.user.create({
-      data: {
-        name: data.name,
-        email,
-        phone: data.phone,
-        passwordHash: await hashPassword(data.password),
-        role: Role.TRAINER,
-        // Admin-added trainers are onboarded in person — mark verified so the
-        // system never expects an email-verification click from them.
-        emailVerified: new Date(),
-        trainerProfile: {
-          create: {
-            specialization: data.specialization,
-            bio: data.bio,
-            experience: data.experience,
-            instagram: data.instagram,
-            profileImageUrl: data.profileImageUrl,
-            founderNote: data.founderNote,
-            founderTitles:
-              data.founderTitles === undefined
-                ? undefined
-                : JSON.stringify(data.founderTitles),
-            isFounder: data.isFounder,
+    const trainer = await prisma.$transaction(async (tx) => {
+      // Keep the single-founder rule: creating a new founder demotes any current one.
+      if (data.isFounder) {
+        await tx.trainerProfile.updateMany({
+          where: { isFounder: true },
+          data: { isFounder: false },
+        });
+      }
+      return tx.user.create({
+        data: {
+          name: data.name,
+          email,
+          phone: data.phone,
+          passwordHash: await hashPassword(data.password),
+          role: Role.TRAINER,
+          // Admin-added trainers are onboarded in person — mark verified so the
+          // system never expects an email-verification click from them.
+          emailVerified: new Date(),
+          trainerProfile: {
+            create: {
+              specialization: data.specialization,
+              bio: data.bio,
+              experience: data.experience,
+              instagram: data.instagram,
+              profileImageUrl: data.profileImageUrl,
+              founderNote: data.founderNote,
+              founderTitles:
+                data.founderTitles === undefined
+                  ? undefined
+                  : JSON.stringify(data.founderTitles),
+              isFounder: data.isFounder,
+            },
           },
         },
-      },
-      include: { trainerProfile: true },
+        include: { trainerProfile: true },
+      });
     });
 
     await logAudit(admin.id, "CREATE_TRAINER", "User", trainer.id, { email });

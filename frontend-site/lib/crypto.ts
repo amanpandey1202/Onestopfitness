@@ -39,7 +39,10 @@ export function decryptField(value: unknown): string | null {
   if (!value || typeof value !== "string") return (value as string | null) ?? null;
   if (!value.startsWith(PREFIX)) return value; // legacy plaintext or unchanged
   try {
-    const [, ivB64, tagB64, dataB64] = value.split(":");
+    const parts = value.split(":");
+    const ivB64 = parts[2];
+    const tagB64 = parts[3];
+    const dataB64 = parts[4];
     const key = getKey();
     const decipher = crypto.createDecipheriv(ALGO, key, Buffer.from(ivB64, "base64"));
     decipher.setAuthTag(Buffer.from(tagB64, "base64"));
@@ -52,4 +55,15 @@ export function decryptField(value: unknown): string | null {
     // Wrong key or corrupted value — do not leak ciphertext.
     return null;
   }
+}
+
+/**
+ * Masked Aadhaar for list views: "XXXX-XXXX-<last4>".
+ * Decrypts transiently server-side only; the full value never leaves the server.
+ */
+export function maskAadhaar(value: unknown): string | null {
+  const plain = decryptField(value);
+  if (!plain) return null;
+  const digits = plain.replace(/[\s-]/g, "");
+  return `XXXX-XXXX-${(digits.slice(-4) || "0000").padStart(4, "0")}`;
 }

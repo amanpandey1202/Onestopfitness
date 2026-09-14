@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { site, whatsappLink } from "@/data/site";
+import { site, whatsappLink, brandParts, copyrightLine } from "@/data/site";
 import Icon from "./Icons.frontend";
 
 export default function FooterFrontend() {
-  const year = new Date().getFullYear();
-  const wa   = whatsappLink();
+  const wa = whatsappLink();
 
   return (
     <footer className="site-footer">
@@ -13,13 +12,13 @@ export default function FooterFrontend() {
           {/* Brand */}
           <div className="footer-brand">
             <Link href="/#top" className="brand-lockup" style={{ textDecoration: "none" }}>
-              <span className="brand-mark">O</span>
+              <span className="brand-mark">{brandParts().word1.charAt(0)}</span>
               <span>
-                <span className="brand-word">ONE STOP</span>
-                <span className="brand-sub">FITNESS CENTER · LUCKNOW</span>
+                <span className="brand-word">{brandParts().word1} {brandParts().word2}</span>
+                <span className="brand-sub">{site.subtitle}</span>
               </span>
             </Link>
-            <p>Full-service fitness for people who choose to show up. Building stronger days in Lucknow since {site.established}.</p>
+            <p>Full-service fitness for people who choose to show up. Building stronger days in {site.city} since {site.established}.</p>
             <Link href={wa} target="_blank" rel="noreferrer" className="footer-cta">
               Start your membership
               <Icon name="arrowRight" className="footer-cta-icon" />
@@ -29,18 +28,18 @@ export default function FooterFrontend() {
           {/* Explore */}
           <div className="footer-col">
             <h4>Explore</h4>
-            <Link href="/#why-us">Why One Stop</Link>
+            <Link href="/#why-us">{site.sections.whyUs}</Link>
             <Link href="/services">Services</Link>
             <Link href="/#classes">Group classes</Link>
             <Link href="/pricing">Memberships</Link>
-            <Link href="/#gallery">Gallery</Link>
+            <Link href="/gallery">{site.sections.gallery}</Link>
           </div>
 
           {/* Visit */}
           <div className="footer-col">
             <h4>Visit</h4>
-            <Link href="/#contact">Location</Link>
-            <Link href="/#faq">FAQs</Link>
+            <Link href="/contact">Location</Link>
+            <Link href="/faq">FAQs</Link>
             <a href={wa} target="_blank" rel="noreferrer">WhatsApp</a>
             <Link href="/register">Join / Register</Link>
             <Link href="/login">Member Login</Link>
@@ -73,8 +72,8 @@ export default function FooterFrontend() {
         </div>
 
         <div className="footer-bottom">
-          <span>© {year} One Stop Fitness Center · {site.address.split(",")[2]?.trim()}</span>
-          <span>Be your best.</span>
+          <span>{copyrightLine()}</span>
+          <span>{site.tagline}.</span>
         </div>
       </div>
     </footer>

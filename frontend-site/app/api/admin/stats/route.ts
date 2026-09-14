@@ -69,13 +69,12 @@ export async function GET() {
         where: { status: "PAID", paidAt: { gte: startOfMonth, lt: startOfNextMonth } },
         _sum: { amount: true },
       }),
-      // Count active members with no check-in in last 14 days (excluding
-      // brand-new members who joined within the window and haven't had a
-      // chance to check in yet).
+      // Absentee members — anyone registered (active, suspended or lapsed)
+      // who hasn't checked in during the last 14 days, excluding brand-new
+      // members who joined within the window and haven't had a chance yet.
       prisma.user.count({
         where: {
           role: Role.MEMBER,
-          isActive: true,
           createdAt: { lte: fourteenDaysAgo },
           attendance: {
             none: {
@@ -176,7 +175,7 @@ export async function GET() {
       .filter((p) => p.status === "PAID" && p.paidAt && p.paidAt >= startOfMonth && p.paidAt < startOfNextMonth && p.method === "EXCEL_IMPORT")
       .reduce((sum, p) => sum + p.amount, 0);
 
-    const avgChurnRisk = activeMembers > 0 ? Math.round((absenteeMembers / activeMembers) * 100) : 0;
+    const avgChurnRisk = totalMembers > 0 ? Math.round((absenteeMembers / totalMembers) * 100) : 0;
 
     return ok({
       stats: {

@@ -4,7 +4,7 @@ import { requireUser, HttpError } from "@/lib/rbac";
 import { hashPassword, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ok } from "@/lib/api";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * Member/trainer/admin self-service password change.
@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireUser();
 
-    const ip = clientIp(req);
     if (!rateLimit(`change-pass:${user.id}`, 5, 10 * 60_000)) {
       return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429 });
     }

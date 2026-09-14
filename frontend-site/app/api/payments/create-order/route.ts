@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
 import { createRazorpayOrder, razorpayConfigured } from "@/lib/razorpay";
+import { applyOfferDiscount } from "@/lib/discount";
 
 const bodySchema = z.object({
   planId: z.string().optional(),
@@ -33,15 +34,24 @@ export async function POST(req: NextRequest) {
 
     let planId = data.planId;
     let offer = null;
-    let discountAmount = 0;
 
     if (data.offerId) {
       offer = await prisma.offer.findUnique({ where: { id: data.offerId } });
       if (offer && offer.isActive) {
+        const now = new Date();
+        const inWindow =
+          (!offer.startDate || offer.startDate <= now) &&
+          (!offer.endDate || offer.endDate >= now);
+        if (!inWindow) offer = null; // stale or not-yet-live offers are not redeemable
+
         if (!planId) {
-          // Default to Combo Plan or Weight Training plan if planId not explicitly passed with offer
-          const combo = await prisma.membershipPlan.findFirst({ where: { isActive: true } });
-          planId = combo?.id;
+          // Default to the offer's bound plan, else Combo Plan / first active plan.
+          if (offer?.planId) {
+            planId = offer.planId;
+          } else {
+            const combo = await prisma.membershipPlan.findFirst({ where: { isActive: true } });
+            planId = combo?.id;
+          }
         }
       }
     }
@@ -55,18 +65,13 @@ export async function POST(req: NextRequest) {
       return fail(new Error("Selected plan is currently unavailable."));
     }
 
-    let finalPrice = plan.price;
-    if (offer && offer.isActive) {
-      if (offer.discountType === "PERCENT" && offer.discountValue) {
-        discountAmount = Math.round((plan.price * offer.discountValue) / 100);
-        finalPrice = Math.max(1, plan.price - discountAmount);
-      } else if (offer.discountType === "AMOUNT" && offer.discountValue) {
-        discountAmount = Math.min(plan.price - 1, offer.discountValue);
-        finalPrice = Math.max(1, plan.price - discountAmount);
-      }
-    }
+    const { finalPrice, discountAmount } = applyOfferDiscount(plan.price, offer);
 
-    const isTestMode = !razorpayConfigured();
+    // Test-mode ordering is only ever available in non-production builds AND
+    // requires an authenticated session. Anonymous "pay for a member" callers
+    // can only create a real Razorpay order, which they must actually fund.
+    const isTestMode =
+      process.env.NODE_ENV !== "production" && !razorpayConfigured() && !!sessionUser;
     const isSessionOwner = sessionUser != null && sessionUser.id === member.id;
     let orderId: string;
 
@@ -96,6 +101,7 @@ export async function POST(req: NextRequest) {
         method: isTestMode ? "TEST_MODE" : "RAZORPAY",
         memberId: member.id,
         planId: plan.id,
+        offerId: offer?.id ?? null,
       },
     });
 

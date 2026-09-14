@@ -40,6 +40,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         title: data.title,
         description: data.description,
         bannerUrl: data.bannerUrl,
+        linkUrl: data.linkUrl,
         startDate: data.startDate,
         endDate: data.endDate,
         maxParticipants: data.maxParticipants,
@@ -67,7 +68,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     if (!competition) return NextResponse.json({ error: "Competition not found" }, { status: 404 });
 
     await prisma.competition.delete({ where: { id } });
-    await deleteStoredImage(competition.bannerUrl);
+    await deleteStoredImage(competition.bannerUrl).catch(() => {});
     await logAudit(admin.id, "DELETE_COMPETITION", "Competition", id, { title: competition.title });
     return ok({ success: true });
   } catch (error) {

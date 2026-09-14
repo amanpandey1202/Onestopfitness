@@ -8,6 +8,11 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     const { id } = await ctx.params;
     const user = await getSessionUser();
 
+    // Receipts contain member PII (name/email/phone/memberCode); a session is mandatory.
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
     const payment = await prisma.payment.findUnique({
       where: { id },
       include: {
@@ -21,7 +26,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     }
 
     // Security check — allow if admin or if member owns the payment
-    if (user && user.role !== "ADMIN" && user.id !== payment.memberId) {
+    if (user.role !== "ADMIN" && user.id !== payment.memberId) {
       return NextResponse.json({ error: "Unauthorized access to receipt" }, { status: 403 });
     }
 

@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
         title: data.title,
         description: data.description,
         bannerUrl: data.bannerUrl,
+        linkUrl: data.linkUrl,
         startDate: data.startDate,
         endDate: data.endDate,
         maxParticipants: data.maxParticipants,

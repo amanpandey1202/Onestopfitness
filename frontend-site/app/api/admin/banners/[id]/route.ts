@@ -50,7 +50,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     if (!banner) return NextResponse.json({ error: "Banner not found" }, { status: 404 });
 
     await prisma.banner.delete({ where: { id } });
-    await deleteStoredImage(banner.imageUrl);
+    await deleteStoredImage(banner.imageUrl).catch(() => {});
     await logAudit(admin.id, "DELETE_BANNER", "Banner", id, { title: banner.title });
     return ok({ success: true });
   } catch (error) {

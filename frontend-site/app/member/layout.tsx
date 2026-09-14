@@ -5,8 +5,9 @@ import { getSessionUser } from "@/lib/auth";
 import MemberShell from "@/components/member/MemberShell";
 
 /**
- * Member layout: server-side role guard. The API layer is still the source
- * of truth — this just keeps the shell correct per role.
+ * Member layout: server-side role guard + email verification enforcement.
+ * The API layer is still the source of truth — this just keeps the shell
+ * correct per role and blocks unverified members.
  *
  * Exceptions: the receipt pages under /member/pay are also viewable by
  * admins/trainers (e.g. from the admin Payments "Receipt" link), so those
@@ -24,6 +25,11 @@ export default async function MemberLayout({ children }: { children: React.React
       return <>{children}</>;
     }
     redirect(user.role === Role.ADMIN ? "/admin/dashboard" : "/trainer");
+  }
+
+  // Enforce email verification for members.
+  if (!user.emailVerified) {
+    redirect("/verify-required");
   }
 
   return <MemberShell>{children}</MemberShell>;

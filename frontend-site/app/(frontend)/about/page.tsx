@@ -1,4 +1,3 @@
-import Image from "next/image";
 import PageHeroFrontend from "@/components-frontend/PageHero.frontend";
 import SectionHeadingFrontend from "@/components-frontend/SectionHeading.frontend";
 import WhatsAppButtonFrontend from "@/components-frontend/WhatsAppButton.frontend";
@@ -9,29 +8,21 @@ import { site } from "@/data/site";
 import { getPublishedTrainers } from "@/lib/services/public";
 
 export const metadata = {
-  title: "About Us — ONE STOP FITNESS",
-  description:
-    "Since 2002, ONE STOP FITNESS has been Lucknow's trailblazer in fitness. Meet Founder Deepak and our expert trainers.",
+  title: `About Us — ${site.name}`,
+  description: site.seo.description,
 };
 
 export const dynamic = "force-dynamic";
 
-const FALLBACK_TITLES = [
-  "MR LUCKNOW 2014",
-  "MR UP 2025",
-  "FIT FACTOR 2016",
-  "JERAI FITNESS MODEL 2016",
-  "MR REGION 2016",
-];
+const FALLBACK_TITLES = site.ownerAchievements.split(" · ");
 
-const FALLBACK_NOTE =
-  "A fitness champion turned coach, I built ONE STOP FITNESS so Lucknow could train with purpose. Every title I won, I won on floors just like this one — now it's your turn.";
+const FALLBACK_NOTE = site.ownerFallbackBio;
 
 export default async function FrontendAboutPage() {
   const trainers = await getPublishedTrainers();
   const founder =
     trainers.find((t) => t.isFounder) ??
-    trainers.find((t) => t.name.toLowerCase().includes("deepak"));
+    trainers.find((t) => t.name.toLowerCase().includes(site.ownerSearchName));
   const team = trainers.filter((t) => t.id !== founder?.id);
 
   return (
@@ -47,7 +38,7 @@ export default async function FrontendAboutPage() {
         <Reveal>
           <div className="mx-auto max-w-3xl space-y-5 text-center text-white/65">
             <p>
-              {site.name} has been a trailblazer in Lucknow&apos;s fitness
+              {site.name} has been a trailblazer in {site.city}&apos;s fitness
               industry since {site.established}. What began as a passion grew into
               a community — a place where champions are made and every member is
               treated like family.
@@ -67,12 +58,11 @@ export default async function FrontendAboutPage() {
               <div className="hero-frame aspect-square">
                 {founder.profileImageUrl ? (
                   <ScrollZoom className="absolute inset-0">
-                    <Image
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                       src={founder.profileImageUrl}
                       alt={`${founder.name} — Founder of ${site.name}`}
-                      fill
-                      sizes="(min-width:1024px) 33vw, 100vw"
-                      className="object-cover"
+                      className="h-full w-full object-cover"
                     />
                   </ScrollZoom>
                 ) : (
@@ -135,12 +125,11 @@ export default async function FrontendAboutPage() {
                 <div className="panel h-full p-7 text-center">
                 <div className="relative mx-auto aspect-square w-full max-w-[190px] overflow-hidden rounded-full border-2 border-gym-lime/45 shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_0_26px_rgba(154,217,1,0.2)]">
                   {trainer.profileImageUrl ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={trainer.profileImageUrl}
                       alt={trainer.name}
-                      fill
-                      sizes="190px"
-                      className="object-cover"
+                      className="h-full w-full rounded-full object-cover"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gym-lime/12 font-anton text-5xl text-gym-lime">

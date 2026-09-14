@@ -4,6 +4,7 @@ import { requireMember } from "@/lib/rbac";
 import { getMemberDashboard } from "@/lib/services/member";
 import { prisma } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
+import { fitnessGoalField } from "@/lib/goals";
 
 export async function GET() {
   try {
@@ -20,10 +21,7 @@ const profileUpdateSchema = z.object({
     .union([z.string(), z.null()])
     .optional()
     .transform((v) => (v === "" ? null : v)),
-  fitnessGoal: z
-    .union([z.string(), z.null()])
-    .optional()
-    .transform((v) => (v === "" ? null : v)),
+  fitnessGoal: fitnessGoalField,
 });
 
 /** Members update their own contact details + fitness goal. */

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Role } from "@prisma/client";
 import { getSessionUser } from "@/lib/auth";
 import AdminShell from "@/components/admin/AdminShell";
+import "./admin.css";
 
 /**
  * Admin layout: server-side role guard (the API layer is still the source of
@@ -22,5 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect(user.role === Role.TRAINER ? "/trainer" : "/member");
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  return (
+    <AdminShell user={{ name: user.name, email: user.email }}>{children}</AdminShell>
+  );
 }

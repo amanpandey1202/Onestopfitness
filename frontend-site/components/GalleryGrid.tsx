@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 type GalleryItem = { imageUrl: string; title: string; mediaType?: string | null };
 
 export default function GalleryGrid({
@@ -38,12 +36,11 @@ export default function GalleryGrid({
                 className="h-full w-full bg-black object-cover"
               />
             ) : (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={item.imageUrl}
                 alt={item.title}
-                fill
-                sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
-                className="object-cover transition duration-500 group-hover:scale-105"
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               />
             )}
           </div>

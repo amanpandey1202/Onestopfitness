@@ -5,6 +5,9 @@ import { SESSION_COOKIE } from "@/lib/constants";
  * UX-level route guarding. The real enforcement lives in the API layer
  * (lib/rbac.ts guards) — middleware just prevents flashing protected pages
  * and bounces logged-out users to the right login screen.
+ *
+ * Email verification is enforced in the member layout (server component
+ * that can run Prisma).
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

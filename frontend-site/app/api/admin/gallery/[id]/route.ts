@@ -24,6 +24,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         description: data.description,
         mediaType: data.mediaType,
         imageUrl: newUrl,
+        posterUrl: data.posterUrl,
         isPublished: data.isPublished,
       },
     });
@@ -48,7 +49,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     if (!image) return NextResponse.json({ error: "Image not found" }, { status: 404 });
 
     await prisma.galleryImage.delete({ where: { id } });
-    await deleteStoredImage(image.imageUrl);
+    await deleteStoredImage(image.imageUrl).catch(() => {});
     await logAudit(admin.id, "DELETE_GALLERY", "GalleryImage", id, { title: image.title });
 
     return ok({ success: true });

@@ -36,23 +36,70 @@ function VerifyEmailForm() {
         setError(e instanceof Error ? e.message : "Could not verify that email link.");
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [token]);
 
   return (
-    <div className="space-y-4 text-center">
-      {state === "loading" && <p className="text-sm text-white/40">Verifying your email…</p>}
+    <div className="space-y-5 text-center">
+      {state === "loading" && (
+        <div className="flex flex-col items-center gap-3">
+          <Spinner className="h-8 w-8" />
+          <p className="text-sm text-white/50">Verifying your email…</p>
+        </div>
+      )}
+
       {state === "done" && (
         <>
-          <p className="text-sm text-white/70">Your email is verified. Welcome to the family!</p>
+          {/* Success checkmark */}
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-gym-lime/60 bg-gym-lime/10">
+            <svg
+              className="h-7 w-7 text-gym-lime"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <p className="text-sm text-white/70">
+            Your email is verified. Welcome to the family! 💪
+          </p>
           <Link href="/login">
             <Button className="w-full">Go to login</Button>
           </Link>
         </>
       )}
-      {state === "error" && <p className="text-sm text-red-300">{error}</p>}
+
+      {state === "error" && (
+        <>
+          {/* Error icon */}
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-500/40 bg-red-500/10">
+            <svg
+              className="h-7 w-7 text-red-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <p className="text-sm text-red-300">{error}</p>
+          <p className="text-xs text-white/40">
+            If this link expired, you can request a new one by logging in and visiting your profile.
+          </p>
+          <Link href="/login">
+            <Button variant="secondary" className="w-full">Back to login</Button>
+          </Link>
+        </>
+      )}
     </div>
   );
 }
@@ -71,7 +118,14 @@ export default function VerifyEmailPage() {
         </>
       }
     >
-      <Suspense fallback={<Spinner />}>
+      <Suspense
+        fallback={
+          <div className="flex flex-col items-center gap-3 py-4">
+            <Spinner className="h-8 w-8" />
+            <p className="text-sm text-white/50">Loading…</p>
+          </div>
+        }
+      >
         <VerifyEmailForm />
       </Suspense>
     </AuthShell>

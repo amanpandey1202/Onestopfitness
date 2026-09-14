@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { site } from "@/data/site";
 import { z } from "zod";
 import { Role, MembershipStatus } from "@prisma/client";
 import { requireAdmin } from "@/lib/rbac";
@@ -16,6 +17,7 @@ type BroadcastMember = {
   id: string;
   name: string;
   phone: string | null;
+  createdAt: Date;
   memberships: { endDate: Date; plan: { name: string; price: number } }[];
   attendance: { checkIn: Date }[];
 };
@@ -71,8 +73,8 @@ export async function POST(req: NextRequest) {
           where: { role: Role.MEMBER, isActive: true },
           include: baseInclude,
         })).filter((m) => {
-          const last = m.attendance[0]?.checkIn;
-          return !last || new Date(last) < ago7;
+          const last = m.attendance[0]?.checkIn ?? m.createdAt;
+          return new Date(last) < ago7;
         });
         break;
 
@@ -81,8 +83,8 @@ export async function POST(req: NextRequest) {
           where: { role: Role.MEMBER, isActive: true },
           include: baseInclude,
         })).filter((m) => {
-          const last = m.attendance[0]?.checkIn;
-          return !last || new Date(last) < ago14;
+          const last = m.attendance[0]?.checkIn ?? m.createdAt;
+          return new Date(last) < ago14;
         });
         break;
 
@@ -101,9 +103,8 @@ export async function POST(req: NextRequest) {
     const results = members.map((m) => {
       const membership = m.memberships[0];
       const lastCheckIn = m.attendance[0]?.checkIn ? new Date(m.attendance[0].checkIn) : null;
-      const daysAbsent = lastCheckIn
-        ? Math.ceil((now.getTime() - lastCheckIn.getTime()) / 86_400_000)
-        : 999;
+      const referenceDate = lastCheckIn ?? new Date(m.createdAt);
+      const daysAbsent = Math.ceil((now.getTime() - referenceDate.getTime()) / 86_400_000);
       const daysUntilExpiry = membership?.endDate
         ? Math.ceil((new Date(membership.endDate).getTime() - now.getTime()) / 86_400_000)
         : 0;
@@ -115,13 +116,13 @@ export async function POST(req: NextRequest) {
         const planPrice = membership?.plan?.price ?? 0;
         switch (messageTemplate) {
           case "absentee":
-            message = `Hey ${name}! 💪 We've missed you at ONE STOP FITNESS — ${daysAbsent} days since your last visit. Come back and let's keep the momentum going!`;
+            message = site.messages.absentReminder(name, daysAbsent);
             break;
           case "expiry-soon":
-            message = `Hey ${name}! ⏰ Your ${planName} membership expires in ${Math.max(0, daysUntilExpiry)} day${daysUntilExpiry === 1 ? "" : "s"}. Renew now and keep training! ₹${planPrice.toLocaleString("en-IN")}/month.`;
+            message = site.messages.expiryWarning(name, planName, planPrice, Math.max(0, daysUntilExpiry));
             break;
           case "expiry-crossed":
-            message = `Hey ${name}! ⚠️ Your ${planName} membership has expired. We want you back! Come renew and restart your fitness journey. 💚`;
+            message = site.messages.expiredFollowup(name, planName, planPrice, Math.max(0, daysUntilExpiry));
             break;
         }
       }

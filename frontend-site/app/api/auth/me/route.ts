@@ -28,6 +28,7 @@ export async function GET() {
       role: user.role,
       memberCode: user.memberCode,
       profileImageUrl: user.profileImageUrl,
+      emailVerified: user.emailVerified,
       qrToken,
       memberProfile,
       trainerProfile,

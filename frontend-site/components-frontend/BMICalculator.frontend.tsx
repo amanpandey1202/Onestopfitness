@@ -20,40 +20,36 @@ export default function BMICalculatorFrontend() {
 
     const bmi = w / (h * h);
     let category = "Normal";
-    let color = "text-gym-lime";
+    let color = "var(--lime)";
     if (bmi < 18.5) {
       category = "Underweight";
-      color = "text-sky-400";
+      color = "#38bdf8";
     } else if (bmi < 25) {
       category = "Normal";
-      color = "text-gym-lime";
+      color = "var(--lime)";
     } else if (bmi < 30) {
       category = "Overweight";
-      color = "text-amber-400";
+      color = "#fbbf24";
     } else {
       category = "Obese";
-      color = "text-red-400";
+      color = "#f87171";
     }
     setResult({ bmi: Math.round(bmi * 10) / 10, category, color });
   }
 
-  const inputCls =
-    "w-full rounded-md border border-white/12 bg-[#0a0a0a] px-4 py-3 text-white outline-none transition focus:border-gym-lime focus:shadow-[0_0_0_1px_rgba(154,217,1,0.3),0_0_18px_rgba(154,217,1,0.12)]";
-
   return (
-    <div className="panel p-7">
-      <h3 className="font-anton text-2xl uppercase leading-none text-white">
-        BMI <span className="glow-lime">Calculator</span>
+    <div className="form-card">
+      <div className="eyebrow">Quick check</div>
+      <h3 style={{ marginTop: 10, fontSize: "clamp(2rem, 5vw, 3rem)" }}>
+        Know your<br /><span style={{ color: "var(--lime)" }}>start.</span>
       </h3>
-      <p className="mt-2 text-sm text-white/55">
-        Check where you stand — then let us plan your journey.
+      <p className="form-sub" style={{ marginTop: 14 }}>
+        Two numbers, a quick answer — then we help you plan the way forward.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <div>
-          <label htmlFor="fheight" className="mb-1.5 block text-sm font-medium text-white/75">
-            Height (cm)
-          </label>
+      <form onSubmit={handleSubmit} className="form-grid">
+        <div className="form-field">
+          <label htmlFor="fheight">Height (cm)</label>
           <input
             id="fheight"
             type="number"
@@ -62,13 +58,10 @@ export default function BMICalculatorFrontend() {
             placeholder="e.g. 170"
             value={height}
             onChange={(e) => setHeight(e.target.value)}
-            className={inputCls}
           />
         </div>
-        <div>
-          <label htmlFor="fweight" className="mb-1.5 block text-sm font-medium text-white/75">
-            Weight (kg)
-          </label>
+        <div className="form-field">
+          <label htmlFor="fweight">Weight (kg)</label>
           <input
             id="fweight"
             type="number"
@@ -77,21 +70,20 @@ export default function BMICalculatorFrontend() {
             placeholder="e.g. 70"
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
-            className={inputCls}
           />
         </div>
-        <button type="submit" className="btn btn-primary w-full">
+        <button type="submit" className="button-primary">
           Calculate BMI
         </button>
       </form>
 
       {result && (
-        <div className="mt-5 r-enter rounded-xl border border-gym-lime/25 bg-[#0a0a0a] p-5 text-center shadow-[0_0_24px_rgba(154,217,1,0.08)]">
-          <p className="text-xs uppercase tracking-[0.25em] text-white/50">Your BMI</p>
-          <p className="stat-num mt-1 text-5xl">
+        <div className="form-success" style={{ textAlign: "center", marginTop: 28 }}>
+          <span style={{ font: "9px var(--font-space-mono),monospace", letterSpacing: ".13em", textTransform: "uppercase", color: "#7d8780" }}>Your BMI</span>
+          <p style={{ margin: "10px 0 0", color: "var(--paper)", font: "800 clamp(2.4rem,6vw,4rem)/.8 var(--font-barlow),sans-serif", letterSpacing: "-.03em" }}>
             <CountUp end={result.bmi} decimals={1} duration={900} />
           </p>
-          <p className={`mt-1.5 text-sm font-bold uppercase tracking-[0.2em] ${result.color}`}>
+          <p style={{ marginTop: 10, color: result.color, font: "700 10px var(--font-space-mono),monospace", letterSpacing: ".14em", textTransform: "uppercase" }}>
             {result.category}
           </p>
         </div>

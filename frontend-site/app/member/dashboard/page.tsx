@@ -5,23 +5,32 @@ import { useEffect, useState } from "react";
 import { cn } from "@/components/admin/ui";
 import Icon from "@/components/Icon";
 import { Badge, Card, Spinner } from "@/components/admin/ui";
-import { formatDate } from "@/lib/format";
+import { formatDate, planPeriodLabel } from "@/lib/format";
+import { whatsappLink } from "@/data/site";
+import AnnouncementTicker from "@/components/AnnouncementTicker";
+import MiniLineChart from "@/components/member/MiniLineChart";
+
+type Meal = { id: string; mealName: string; timing: string | null; calories: number | null };
 
 type DashboardData = {
-  user: { id: string; name: string; email: string; phone: string | null; profileImageUrl: string | null };
+  user: { id: string; name: string; email: string; phone: string | null; memberCode: string | null; profileImageUrl: string | null };
   profile: { fitnessGoal: string | null; joiningDate: string | null } | null;
   membership: {
     id: string;
-    plan: { name: string; price: number; description: string | null; features: string[] };
+    plan: { name: string; price: number; description: string | null; durationDays?: number | null; features: string[] };
     startDate: string;
     endDate: string;
     status: string;
     daysRemaining: number;
+    frozenAt: string | null;
+    freezeEndsAt: string | null;
   } | null;
   attendance: {
     total: number;
     todayCheckIn: { id: string; checkIn: string } | null;
     recent: { id: string; checkIn: string; method: string }[];
+    monthVisits: number;
+    weekVisits: { date: string; visits: number }[];
   };
   workoutPlan: {
     id: string;
@@ -32,9 +41,38 @@ type DashboardData = {
     exercises: { id: string; exerciseName: string; sets: number | null; reps: string | null; duration: string | null; restSeconds: number | null }[];
   } | null;
   joinedCompetitions: { id: string; competition: { id: string; title: string; endDate: string | null; status: string } }[];
+  dietPlan: {
+    id: string;
+    title: string;
+    goal: string | null;
+    description: string | null;
+    calorieTarget: number | null;
+    proteinGm: number | null;
+    carbsGm: number | null;
+    fatGm: number | null;
+    updatedAt: string | null;
+    trainer: { name: string } | null;
+    meals: Meal[];
+  } | null;
+  measurements: { id: string; recordedAt: string; weightKg: number | null; bodyFatPct: number | null }[];
+  todaysClasses: {
+    id: string;
+    name: string;
+    startTime: string;
+    endTime: string;
+    location: string | null;
+    booked: number;
+    spotsLeft: number;
+    full: boolean;
+    isBooked: boolean;
+  }[];
+  announcements: { id: string; title: string; body: string }[];
+  verificationNeeded: boolean;
 };
 
 const GRADIENT = "bg-gradient-to-br from-gym-lime/20 to-transparent";
+
+type IconProps = React.ComponentProps<typeof Icon>;
 
 function memberProgressPct(start: string, end: string): number {
   const s = new Date(start).getTime();
@@ -47,6 +85,18 @@ function memberProgressPct(start: string, end: string): number {
 
 function timeOnly(iso: string) {
   return new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+}
+
+function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="mb-4 flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        <span className="h-5 w-1 rounded-full bg-gym-lime shadow-glow-sm" />
+        <h2 className="heading-condensed text-xl text-white">{children}</h2>
+      </div>
+      {action}
+    </div>
+  );
 }
 
 function StatCard({
@@ -66,15 +116,15 @@ function StatCard({
     tone === "amber"
       ? "bg-amber-500/15 text-amber-300"
       : tone === "white"
-      ? "bg-white/10 text-white/80"
-      : "bg-gym-lime/15 text-gym-lime";
+        ? "bg-white/10 text-white/80"
+        : "bg-gym-lime/15 text-gym-lime";
   const valueColor = tone === "amber" ? "text-amber-300" : tone === "white" ? "text-white" : "text-gym-lime";
   return (
     <Card className="relative overflow-hidden p-5">
       <div className={cn("pointer-events-none absolute inset-0", GRADIENT)} />
       <div className="relative flex items-start justify-between">
         <div>
-          <p className="text-[13px] font-semibold uppercase tracking-wide text-white/45">{label}</p>
+          <p className="label-kicker">{label}</p>
           <p
             className={cn(
               "mt-3 text-4xl leading-none",
@@ -93,20 +143,6 @@ function StatCard({
   );
 }
 
-type IconProps = React.ComponentProps<typeof Icon>;
-
-function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="mb-4 flex items-center justify-between">
-      <div className="flex items-center gap-2.5">
-        <span className="h-5 w-1 rounded-full bg-gym-lime shadow-glow-sm" />
-        <h2 className="font-anton text-xl italic uppercase tracking-wide text-white">{children}</h2>
-      </div>
-      {action}
-    </div>
-  );
-}
-
 function CardLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
@@ -119,19 +155,87 @@ function CardLink({ href, children }: { href: string; children: React.ReactNode 
   );
 }
 
+function membershipBadge(m: DashboardData["membership"]) {
+  if (!m) return { tone: "red" as const, label: "No membership" };
+  switch (m.status) {
+    case "ACTIVE":
+      return { tone: "green" as const, label: `Membership active · ${m.daysRemaining} days left` };
+    case "FROZEN":
+      return {
+        tone: "yellow" as const,
+        label: `Frozen · resumes ${formatDate(m.freezeEndsAt ?? m.endDate)}`,
+      };
+    case "SUSPENDED":
+      return { tone: "yellow" as const, label: "Suspended" };
+    case "CANCELLED":
+      return { tone: "neutral" as const, label: "Cancelled" };
+    default:
+      return { tone: "red" as const, label: "Membership expired" };
+  }
+}
+
+function WeekBars({ data }: { data: { date: string; visits: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.visits));
+  const dayLabel = (iso: string) =>
+    new Date(iso + "T00:00:00").toLocaleDateString("en-IN", { weekday: "narrow" });
+  return (
+    <div className="flex h-20 items-end gap-2">
+      {data.map((d) => (
+        <div key={d.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
+          <span className="text-[10px] font-semibold text-gym-lime">{d.visits || ""}</span>
+          <div
+            className={cn("w-full rounded-t-sm", d.visits ? "bg-gradient-to-t from-gym-lime-dim to-gym-lime" : "bg-white/10")}
+            style={{ height: `${Math.max(d.visits ? 14 : 4, (d.visits / max) * 100)}%` }}
+          />
+          <span className="text-[10px] text-white/30">{dayLabel(d.date)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function MemberDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Initial load + auto-refresh: interval (paused while tab hidden) + refetch on focus
   useEffect(() => {
-    fetch("/api/me")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("load failed"))))
-      .then(setData)
-      .catch(() => setError("Couldn't load your dashboard."));
+    let cancelled = false;
+
+    async function refresh(silent: boolean) {
+      if (document.hidden && !silent) return;
+      try {
+        const res = await fetch("/api/me");
+        if (!res.ok) throw new Error("load failed");
+        const next = await res.json();
+        if (!cancelled) {
+          setData(next);
+          setError(null);
+        }
+      } catch {
+        if (!cancelled && !silent) setError("Couldn't load your dashboard.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    refresh(false);
+    const timer = window.setInterval(() => refresh(true), 30000);
+    const onVisibility = () => {
+      if (!document.hidden) refresh(true);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   if (error) return <p className="text-sm text-red-300">{error}</p>;
-  if (!data) {
+  if (loading || !data) {
     return (
       <div className="flex justify-center py-24">
         <Spinner />
@@ -139,7 +243,8 @@ export default function MemberDashboardPage() {
     );
   }
 
-  const { user, profile, membership, attendance, workoutPlan, joinedCompetitions } = data;
+  const { user, profile, membership, attendance, workoutPlan, joinedCompetitions, dietPlan, measurements, todaysClasses, announcements, verificationNeeded } = data;
+  const badge = membershipBadge(membership);
   const active = membership?.status === "ACTIVE";
   const firstName = user.name.split(" ")[0];
   const initials = user.name
@@ -149,10 +254,19 @@ export default function MemberDashboardPage() {
     .join("")
     .toUpperCase();
 
+  const latestM = measurements[0];
+  const prevM = measurements[1];
+  const weightChart = [...measurements]
+    .reverse()
+    .filter((m) => m.weightKg != null)
+    .map((m, i) => ({ x: i, y: m.weightKg as number }));
+  const weightDelta =
+    latestM?.weightKg != null && prevM?.weightKg != null ? latestM.weightKg - prevM.weightKg : null;
+
   return (
-    <div className="space-y-8 r-enter">
+    <div className="space-y-8">
       {/* ── Hero header ─────────────────────────────────────────── */}
-      <header className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-gym-ink via-gym-black to-gym-black p-6 sm:p-8">
+      <header className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-br from-surface-1 via-gym-black to-gym-black p-6 sm:p-8">
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gym-lime/10 blur-3xl" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -169,11 +283,9 @@ export default function MemberDashboardPage() {
               </div>
             )}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gym-lime">
-                Member dashboard
-              </p>
-              <h1 className="mt-1 font-anton text-3xl italic uppercase leading-none tracking-wide text-white sm:text-4xl">
-                Welcome back, <span className="text-gym-lime">{firstName}</span>
+              <p className="label-kicker">Member dashboard</p>
+              <h1 className="mt-1 font-anton text-3xl uppercase leading-none tracking-wide text-white sm:text-4xl">
+                Welcome back, <span className="glow-lime">{firstName}</span>
               </h1>
               {profile?.fitnessGoal && (
                 <p className="mt-2 flex items-center gap-2 text-sm text-white/55">
@@ -181,14 +293,18 @@ export default function MemberDashboardPage() {
                   Goal: <span className="font-semibold text-white/80">{profile.fitnessGoal}</span>
                 </p>
               )}
+              {user.memberCode && (
+                <p className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-surface-3 px-2 py-0.5 font-mono text-[10px] tracking-wide text-white/55">
+                  <Icon name="qrCode" className="h-3 w-3 text-gym-lime" />
+                  {user.memberCode}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="flex flex-col items-start gap-3 sm:items-end">
             {membership ? (
-              <Badge tone={active ? "green" : "red"}>
-                {active ? `Membership active · ${membership.daysRemaining} days left` : "Membership expired"}
-              </Badge>
+              <Badge tone={badge.tone}>{badge.label}</Badge>
             ) : (
               <Badge tone="red">No membership</Badge>
             )}
@@ -210,6 +326,29 @@ export default function MemberDashboardPage() {
         </div>
       </header>
 
+      {/* ── Profile verification banner ─────────────────────────── */}
+      {verificationNeeded && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-4">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300">
+            <Icon name="flag" className="h-4.5 w-4.5" />
+          </span>
+          <div>
+            <p className="font-bold text-amber-200">Profile Verification Pending</p>
+            <p className="mt-0.5 text-sm text-amber-100/80">
+              Welcome! Your online account is created. Please visit the gym front desk with your
+              Aadhaar card to verify your account and complete your registration.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Announcements ───────────────────────────────────────── */}
+      {announcements.length > 0 && (
+        <Card className="px-5 py-3">
+          <AnnouncementTicker announcements={announcements} />
+        </Card>
+      )}
+
       {/* ── Quick links ─────────────────────────────────────────── */}
       <nav className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
@@ -221,7 +360,7 @@ export default function MemberDashboardPage() {
           <Link
             key={l.href}
             href={l.href}
-            className="group flex items-center gap-3 rounded-xl border border-white/10 bg-gym-ink px-4 py-3.5 transition hover:border-gym-lime/50 hover:bg-gym-black active:scale-[0.98]"
+            className="group flex items-center gap-3 rounded-xl border border-white/10 bg-surface-2 px-4 py-3.5 transition hover:border-gym-lime/50 hover:bg-surface-3 active:scale-[0.98]"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gym-lime/15 text-gym-lime transition group-hover:bg-gym-lime group-hover:text-gym-black">
               <Icon name={l.icon} className="h-4.5 w-4.5" />
@@ -237,7 +376,13 @@ export default function MemberDashboardPage() {
           icon="activity"
           label="Total check-ins"
           value={String(attendance.total)}
-          sub={attendance.recent.length ? `Last visit ${formatDate(attendance.recent[0].checkIn)}` : "No visits yet"}
+          sub={
+            attendance.monthVisits > 0
+              ? `${attendance.monthVisits} visits this month`
+              : attendance.recent.length
+                ? `Last visit ${formatDate(attendance.recent[0].checkIn)}`
+                : "No visits yet"
+          }
         />
         <StatCard
           icon="calendar"
@@ -247,7 +392,9 @@ export default function MemberDashboardPage() {
             membership
               ? active
                 ? `Valid till ${formatDate(membership.endDate)}`
-                : "Plan expired"
+                : membership.status === "FROZEN"
+                  ? `Frozen till ${formatDate(membership.freezeEndsAt ?? membership.endDate)}`
+                  : "Plan not active"
               : "Pick a plan to get started"
           }
         />
@@ -279,19 +426,22 @@ export default function MemberDashboardPage() {
               <>
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="text-xl font-bold text-white">{membership.plan.name}</p>
-                  <p className="text-gym-lime">₹{membership.plan.price.toLocaleString("en-IN")}/mo</p>
+                  <p className="font-display text-2xl leading-none text-gym-lime">
+                    ₹{membership.plan.price.toLocaleString("en-IN")}
+                    <span className="ml-1 font-sans text-xs font-semibold text-white/40">/ {planPeriodLabel(membership.plan.durationDays)}</span>
+                  </p>
                 </div>
                 {membership.plan.description && (
                   <p className="mt-1 text-sm text-white/55">{membership.plan.description}</p>
                 )}
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-lg border border-white/10 bg-gym-black px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Valid from</p>
+                  <div className="rounded-lg border border-white/10 bg-surface-3 px-4 py-3">
+                    <p className="label-kicker">Valid from</p>
                     <p className="mt-1 font-semibold text-white/85">{formatDate(membership.startDate)}</p>
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-gym-black px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Valid till</p>
+                  <div className="rounded-lg border border-white/10 bg-surface-3 px-4 py-3">
+                    <p className="label-kicker">Valid till</p>
                     <p className="mt-1 font-semibold text-white/85">{formatDate(membership.endDate)}</p>
                   </div>
                 </div>
@@ -309,10 +459,47 @@ export default function MemberDashboardPage() {
                   </ul>
                 )}
 
-                {!active && (
-                  <p className="mt-5 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                    Your membership has expired. Reach out on WhatsApp to renew.
-                  </p>
+                {membership.status === "EXPIRED" && (
+                  <div className="mt-5 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3">
+                    <p className="text-sm font-semibold text-red-300">
+                      Your membership has expired.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <Link
+                        href="/member/pay"
+                        className="inline-flex items-center gap-2 rounded-md bg-gym-lime px-4 py-2 text-sm font-bold text-gym-black transition hover:bg-gym-lime-soft active:scale-[0.98]"
+                      >
+                        Renew now
+                        <Icon name="arrowRight" className="h-3.5 w-3.5" />
+                      </Link>
+                      <a
+                        href={whatsappLink()}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm font-bold text-white/65 underline-offset-4 hover:text-white hover:underline"
+                      >
+                        Ask on WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                )}
+                {membership.status === "FROZEN" && (
+                  <div className="mt-5 rounded-lg border border-amber-400/30 bg-amber-500/10 px-4 py-3">
+                    <p className="text-sm font-semibold text-amber-300">
+                      Your membership is frozen. It resumes{" "}
+                      {formatDate(membership.freezeEndsAt ?? membership.endDate)}.
+                    </p>
+                    <p className="mt-1 text-xs text-amber-200/60">
+                      Freezes pause your plan without losing remaining days.
+                    </p>
+                  </div>
+                )}
+                {(membership.status === "SUSPENDED" || membership.status === "CANCELLED") && (
+                  <div className="mt-5 rounded-lg border border-amber-400/30 bg-amber-500/10 px-4 py-3">
+                    <p className="text-sm font-semibold text-amber-300">
+                      Your membership is {membership.status.toLowerCase()}. Contact the front desk for help.
+                    </p>
+                  </div>
                 )}
               </>
             ) : (
@@ -355,12 +542,14 @@ export default function MemberDashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-white/10 bg-gym-black px-5 py-6 text-center">
+              <div className="rounded-xl border border-white/10 bg-surface-3 px-5 py-6 text-center">
                 <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white/60">
                   <Icon name="clock" className="h-5 w-5" />
                 </span>
                 <p className="mt-3 font-semibold text-white">Not checked in yet</p>
-                <p className="mt-1 text-sm text-white/50">Scan your QR at the front desk to start today&apos;s session.</p>
+                <p className="mt-1 text-sm text-white/50">
+                  Scan your QR at the front desk to start today&apos;s session.
+                </p>
               </div>
             )}
 
@@ -377,22 +566,36 @@ export default function MemberDashboardPage() {
               <Icon name="arrowRight" className="h-4 w-4" />
             </Link>
 
+            {/* This week's visits */}
+            <div className="mt-6">
+              <p className="mb-2 flex items-center gap-2 label-kicker">
+                <Icon name="activity" className="h-3.5 w-3.5 text-gym-lime" />
+                This week
+                <span className="font-semibold text-gym-lime">
+                  {attendance.weekVisits.reduce((s, d) => s + d.visits, 0)} visits
+                </span>
+              </p>
+              <div className="rounded-lg border border-white/5 bg-surface-3/60 px-4 py-3">
+                <WeekBars data={attendance.weekVisits} />
+              </div>
+            </div>
+
             {attendance.recent.length > 0 && (
               <div className="mt-6 flex-1">
-                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/55">Recent activity</p>
+                <p className="mb-3 label-kicker">Recent activity</p>
                 <ul className="space-y-2">
                   {attendance.recent
-                    .slice(0, attendance.recent.length > 6 ? 6 : attendance.recent.length)
+                    .slice(0, attendance.recent.length > 4 ? 4 : attendance.recent.length)
                     .map((r) => (
                       <li
                         key={r.id}
-                        className="flex items-center justify-between rounded-lg border border-white/5 bg-gym-black/60 px-4 py-2.5"
+                        className="flex items-center justify-between rounded-lg border border-white/5 bg-surface-3/60 px-4 py-2.5"
                       >
                         <span className="flex items-center gap-2.5 text-sm text-white/75">
                           <Icon name="check" className="h-4 w-4 text-gym-lime" />
                           {formatDate(r.checkIn)}
                         </span>
-                        <span className="text-xs font-mono text-white/40">{timeOnly(r.checkIn)}</span>
+                        <span className="font-mono text-xs text-white/40">{timeOnly(r.checkIn)}</span>
                       </li>
                     ))}
                 </ul>
@@ -400,6 +603,155 @@ export default function MemberDashboardPage() {
             )}
           </div>
         </Card>
+      </div>
+
+      {/* ── Today's classes ─────────────────────────────────────── */}
+      {todaysClasses.length > 0 && (
+        <Card className="overflow-hidden">
+          <div className="border-b border-white/10 px-6 py-4">
+            <SectionTitle action={<CardLink href="/member/classes">Book a class</CardLink>}>
+              Today&apos;s classes
+            </SectionTitle>
+          </div>
+          <div className="grid gap-4 p-6 sm:grid-cols-2">
+            {todaysClasses.map((cls) => (
+              <div
+                key={cls.id}
+                className={cn(
+                  "flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5",
+                  cls.isBooked
+                    ? "border-gym-lime/40 bg-gym-lime/10"
+                    : "border-white/10 bg-surface-3"
+                )}
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold text-white">{cls.name}</p>
+                  <p className="mt-0.5 text-xs text-white/55">
+                    {cls.startTime} - {cls.endTime}
+                    {cls.location ? ` · ${cls.location}` : ""}
+                  </p>
+                  <p className={cn("mt-1 text-xs", cls.full ? "text-red-300" : "text-white/40")}>
+                    {cls.isBooked
+                      ? "You're booked ✓"
+                      : cls.full
+                        ? "Full"
+                        : `${cls.spotsLeft} spot${cls.spotsLeft === 1 ? "" : "s"} left`}
+                  </p>
+                </div>
+                {!cls.isBooked && !cls.full && (
+                  <Link
+                    href="/member/classes"
+                    className="shrink-0 rounded-md bg-gym-lime px-3 py-1.5 text-xs font-bold text-gym-black transition hover:bg-gym-lime-soft active:scale-95"
+                  >
+                    Book
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* ── Diet plan + Progress snapshot ───────────────────────── */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Diet summary */}
+        {dietPlan && (
+          <Card className="overflow-hidden">
+            <div className="border-b border-white/10 px-6 py-4">
+              <SectionTitle>My diet plan</SectionTitle>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-white">{dietPlan.title}</h3>
+                  {dietPlan.goal && (
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gym-lime">{dietPlan.goal}</p>
+                  )}
+                </div>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gym-lime/15 text-gym-lime">
+                  <Icon name="leaf" className="h-5 w-5" />
+                </div>
+              </div>
+              {dietPlan.description && <p className="mt-3 text-sm text-white/60">{dietPlan.description}</p>}
+
+              <div className="mt-4 grid grid-cols-4 gap-1 text-center bg-gym-black p-2 rounded text-xs">
+                <div>
+                  <p className="text-white/40">Kcal</p>
+                  <p className="font-bold text-white">{dietPlan.calorieTarget || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-white/40">Protein</p>
+                  <p className="font-bold text-gym-lime">{dietPlan.proteinGm ? `${dietPlan.proteinGm}g` : "—"}</p>
+                </div>
+                <div>
+                  <p className="text-white/40">Carbs</p>
+                  <p className="font-bold text-amber-400">{dietPlan.carbsGm ? `${dietPlan.carbsGm}g` : "—"}</p>
+                </div>
+                <div>
+                  <p className="text-white/40">Fat</p>
+                  <p className="font-bold text-red-400">{dietPlan.fatGm ? `${dietPlan.fatGm}g` : "—"}</p>
+                </div>
+              </div>
+
+              {dietPlan.meals.length > 0 && (
+                <div className="mt-4 space-y-1.5">
+                  {dietPlan.meals.map((m) => (
+                    <div key={m.id} className="flex items-center justify-between text-xs border-l-2 border-gym-lime pl-2 py-0.5">
+                      <span className="font-semibold text-white/80">
+                        {m.mealName}
+                        {m.timing ? <span className="text-white/40"> · {m.timing}</span> : null}
+                      </span>
+                      {m.calories && <span className="font-mono text-white/40">{m.calories} kcal</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-5 border-t border-white/10 pt-4">
+                <CardLink href="/member/diet">View full plan</CardLink>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Progress snapshot */}
+        {latestM && latestM.weightKg != null && (
+          <Card className="overflow-hidden">
+            <div className="border-b border-white/10 px-6 py-4">
+              <SectionTitle>Progress</SectionTitle>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="label-kicker">
+                    Latest weight · {formatDate(latestM.recordedAt)}
+                  </p>
+                  <p className="mt-2 font-display text-4xl font-bold text-gym-lime">
+                    {latestM.weightKg}
+                    <span className="ml-1 font-sans text-sm font-semibold text-white/40">kg</span>
+                  </p>
+                </div>
+                {weightDelta != null && (
+                  <Badge tone={weightDelta <= 0 ? "green" : "neutral"}>
+                    {weightDelta > 0 ? "+" : ""}
+                    {weightDelta.toFixed(1)} kg since last
+                  </Badge>
+                )}
+              </div>
+              {latestM.bodyFatPct != null && (
+                <p className="mt-2 text-xs text-white/45">
+                  Body fat: <span className="font-semibold text-white/75">{latestM.bodyFatPct}%</span>
+                </p>
+              )}
+              <div className="mt-4">
+                <MiniLineChart color="#9AD901" data={weightChart} />
+              </div>
+              <div className="mt-4 border-t border-white/10 pt-4">
+                <CardLink href="/member/measurements">See all measurements</CardLink>
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* ── Workout plan ────────────────────────────────────────── */}
@@ -425,7 +777,9 @@ export default function MemberDashboardPage() {
               </span>
               <div>
                 <h3 className="text-lg font-bold text-white">{workoutPlan.title}</h3>
-                {workoutPlan.goal && <p className="text-xs font-semibold uppercase tracking-wide text-gym-lime">{workoutPlan.goal}</p>}
+                {workoutPlan.goal && (
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gym-lime">{workoutPlan.goal}</p>
+                )}
               </div>
             </div>
             {workoutPlan.description && <p className="mt-3 text-sm text-white/60">{workoutPlan.description}</p>}
@@ -433,7 +787,7 @@ export default function MemberDashboardPage() {
               {workoutPlan.exercises.map((ex, i) => (
                 <div
                   key={ex.id}
-                  className="group flex items-start gap-3 rounded-xl border border-white/10 bg-gym-black px-4 py-3.5 transition hover:border-gym-lime/40"
+                  className="group flex items-start gap-3 rounded-xl border border-white/10 bg-surface-3 px-4 py-3.5 transition hover:border-gym-lime/40"
                 >
                   <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5 font-anton text-sm italic text-gym-lime">
                     {i + 1}
@@ -458,7 +812,7 @@ export default function MemberDashboardPage() {
       {joinedCompetitions.length > 0 && (
         <Card className="overflow-hidden">
           <div className="border-b border-white/10 px-6 py-4">
-            <SectionTitle action={<CardLink href="/member/dashboard">View all</CardLink>}>My challenges</SectionTitle>
+            <SectionTitle>My challenges</SectionTitle>
           </div>
           <div className="divide-y divide-white/5 p-6 pt-2">
             {joinedCompetitions.slice(0, 3).map((j) => (

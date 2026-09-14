@@ -30,12 +30,23 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const body = await req.json();
     const data = trainerUpdateSchema.parse(body);
 
-    const target = await prisma.user.findUnique({ where: { id } });
+    const target = await prisma.user.findUnique({
+      where: { id },
+      include: { trainerProfile: true },
+    });
     if (!target) return NextResponse.json({ error: "Trainer not found" }, { status: 404 });
 
     // Prevent the active admin from accidentally suspending their own account.
     if (id === admin.id && data.isActive === false) {
       return NextResponse.json({ error: "You can't suspend your own account" }, { status: 400 });
+    }
+
+    // The gym always needs its founder visible — demote before suspending them.
+    if (data.isActive === false && target.trainerProfile?.isFounder) {
+      return NextResponse.json(
+        { error: "The founder can't be suspended. Unmark them as founder first." },
+        { status: 400 }
+      );
     }
 
     const profileFields = {
@@ -54,19 +65,29 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     // `isActive` is a login-level flag on User (checked by getSessionUser).
     // Surfacing it to the top-level update makes "Suspend" actually revoke
     // portal access, not just flip the trainerProfile display flag.
-    const updated = await prisma.user.update({
-      where: { id },
-      data: {
-        name: data.name,
-        phone: data.phone,
-        isActive: data.isActive,
-        trainerProfile: {
-          upsert: {
-            create: { ...profileFields, isActive: data.isActive ?? true, specialization: data.specialization ?? "Trainer" },
-            update: profileFields,
+    const updated = await prisma.$transaction(async (tx) => {
+      // Only one founder is allowed — marking someone else as founder demotes
+      // whoever currently holds the title, so "founder to everyone" is impossible.
+      if (data.isFounder === true) {
+        await tx.trainerProfile.updateMany({
+          where: { isFounder: true, userId: { not: id } },
+          data: { isFounder: false },
+        });
+      }
+      return tx.user.update({
+        where: { id },
+        data: {
+          name: data.name,
+          phone: data.phone,
+          isActive: data.isActive,
+          trainerProfile: {
+            upsert: {
+              create: { ...profileFields, isActive: data.isActive ?? true, specialization: data.specialization ?? "Trainer" },
+              update: profileFields,
+            },
           },
         },
-      },
+      });
     });
 
     await logAudit(admin.id, data.isActive === false ? "SUSPEND_TRAINER" : "UPDATE_TRAINER", "User", id);

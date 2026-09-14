@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Role } from "@prisma/client";
 import { requireAdmin } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
@@ -44,6 +45,12 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     });
     if (!user) return NextResponse.json({ error: "Member not found" }, { status: 404 });
 
+    // This endpoint manages member accounts only; never let a member-scoped
+    // request touch ADMIN/TRAINER accounts (rename, deactivate, profile PII).
+    if (user.role !== Role.MEMBER) {
+      return NextResponse.json({ error: "This endpoint only manages member accounts" }, { status: 400 });
+    }
+
     // Prevent the active admin from accidentally suspending/deactivating their own account.
     if (id === admin.id && data.isActive === false) {
       return NextResponse.json({ error: "You can't suspend your own account" }, { status: 400 });
@@ -64,6 +71,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       address: data.address,
       parentName: data.parentName,
       parentPhone: data.parentPhone,
+      emergencyContact: data.emergencyContact,
     };
 
     // A user could lack a MemberProfile (e.g. legacy/imported accounts). Use
@@ -74,6 +82,13 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         name: data.name,
         phone: data.phone,
         isActive: data.isActive,
+        ...(data.markEmailVerified
+          ? {
+              emailVerified: new Date(),
+              verifyToken: null,
+              verifyTokenExpires: null,
+            }
+          : {}),
         memberProfile: {
           upsert: {
             create: profileData,
@@ -104,6 +119,11 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     }
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return NextResponse.json({ error: "Member not found" }, { status: 404 });
+
+    // Only member accounts can be deleted via this endpoint — never staff.
+    if (user.role !== Role.MEMBER) {
+      return NextResponse.json({ error: "Only member accounts can be deleted here" }, { status: 400 });
+    }
 
     // AuditLog has no onDelete:Cascade, so we clear it first before deleting the user.
     // All other relations (Session, MemberProfile, Membership, Attendance, Payment,

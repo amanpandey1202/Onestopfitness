@@ -41,7 +41,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
 
     await prisma.testimonial.delete({ where: { id } });
     // Clean up the uploaded image so it doesn't linger on disk.
-    await deleteStoredImage(existing.imageUrl);
+    await deleteStoredImage(existing.imageUrl).catch(() => {});
 
     await logAudit(admin.id, "DELETE_TESTIMONIAL", "Testimonial", id, {
       name: existing.name,

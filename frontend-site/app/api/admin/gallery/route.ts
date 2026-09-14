@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
         imageUrl: data.imageUrl,
         mediaType: data.mediaType,
         storagePublicId: data.storagePublicId,
+        posterUrl: data.posterUrl,
         isPublished: data.isPublished,
         createdById: admin.id,
       },

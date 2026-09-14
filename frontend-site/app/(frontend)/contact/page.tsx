@@ -1,144 +1,164 @@
-import PageHeroFrontend from "@/components-frontend/PageHero.frontend";
+import PageHeaderFrontend from "@/components-frontend/PageHeader.frontend";
 import BMICalculatorFrontend from "@/components-frontend/BMICalculator.frontend";
 import WhatsAppButtonFrontend from "@/components-frontend/WhatsAppButton.frontend";
-import Icon, { type IconName } from "@/components-frontend/Icons.frontend";
 import Reveal from "@/components/Reveal";
 import { site } from "@/data/site";
 
 export const metadata = {
-  title: "Contact — ONE STOP FITNESS",
-  description:
-    "Find ONE STOP FITNESS in Rajajipuram, Lucknow. Call or WhatsApp us at 092369 58881.",
+  title: `Contact — ${site.name}`,
+  description: site.seo.description,
 };
-
-const infoCards: {
-  icon: IconName;
-  title: string;
-  lines: string[];
-  href?: string;
-  hrefLabel?: string;
-}[] = [
-  {
-    icon: "pin",
-    title: "Address",
-    lines: [site.address],
-    href: site.mapsUrl,
-    hrefLabel: "Open in Google Maps",
-  },
-  {
-    icon: "phone",
-    title: "Phone / WhatsApp",
-    lines: [site.phoneDisplay],
-    href: `tel:${site.phoneRaw}`,
-    hrefLabel: "Call now",
-  },
-  {
-    icon: "clock",
-    title: "Timings",
-    lines: [site.hours, "Sunday: Closed"],
-  },
-  {
-    icon: "camera",
-    title: "Instagram",
-    lines: [site.instagramHandle],
-    href: site.instagram,
-    hrefLabel: "Follow us",
-  },
-];
 
 export default function FrontendContactPage() {
   return (
     <>
-      <PageHeroFrontend
+      <PageHeaderFrontend
         kicker="Contact"
-        title="Find Us & Get Started"
+        title="Find us"
+        highlight="& get started."
         subtitle="Drop by, call, or message us on WhatsApp — we're quick to reply."
+        image="/uploads/gallery/6c62a075ea130b2d026660612a3f40c1.jpg"
       />
 
-      {/* INFO CARDS */}
-      <section className="section mx-auto max-w-7xl">
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {infoCards.map((card, i) => (
-            <Reveal key={card.title} delay={i * 70} className="h-full">
-              <div className="panel h-full p-7">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md border border-gym-lime/40 bg-gym-lime/10 text-gym-lime shadow-[0_0_20px_rgba(154,217,1,0.18)]">
-                <Icon name={card.icon} className="h-6 w-6" />
-              </div>
-              <h3 className="font-anton mt-5 text-lg uppercase leading-tight text-gym-lime">
-                {card.title}
-              </h3>
-              {card.lines.map((line) => (
-                <p key={line} className="mt-1.5 text-sm text-white/70">
-                  {line}
+      {/* Contact info + Map */}
+      <section className="section-pad">
+        <div className="container-wide">
+          <div className="split-panel">
+            {/* Left: details */}
+            <div>
+              <div className="contact-section" style={{ paddingTop: 0 }}>
+                <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  Get in touch
+                </div>
+                <h2 className="section-title" style={{ marginTop: 18 }}>
+                  Reach<br />
+                  <span style={{ color: "var(--lime)" }}>out.</span>
+                </h2>
+                <p className="section-copy" style={{ marginTop: 22 }}>
+                  We reply fast on WhatsApp. For quick answers, check our FAQ page first.
                 </p>
-              ))}
-              {card.href && (
-                <a
-                  href={card.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="nav-link mt-4 inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-[0.12em] text-white"
-                >
-                  {card.hrefLabel}
-                  <Icon name="arrowUpRight" className="h-3.5 w-3.5 text-gym-lime" />
-                </a>
-              )}
+                <div className="contact-list" style={{ marginTop: 36 }}>
+                  <div className="contact-line">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <div>
+                      <span style={{ color: "#7d8780", font: "8px var(--font-space-mono),monospace", letterSpacing: ".12em", textTransform: "uppercase" }}>Address</span>
+                      <p style={{ marginTop: 6, color: "var(--paper)", fontSize: 14, lineHeight: 1.55 }}>
+                        {site.address}
+                      </p>
+                      <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 10, color: "var(--paper)", font: "700 10px var(--font-space-mono),monospace", letterSpacing: ".12em", textTransform: "uppercase", textDecoration: "none" }}>
+                        Open in Google Maps
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--lime)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+                      </a>
+                    </div>
+                  </div>
+                  <div className="contact-line">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <div>
+                      <span style={{ color: "#7d8780", font: "8px var(--font-space-mono),monospace", letterSpacing: ".12em", textTransform: "uppercase" }}>Phone / WhatsApp</span>
+                      <p style={{ marginTop: 6, color: "var(--paper)", fontSize: 14 }}>
+                        {site.phoneDisplay}
+                      </p>
+                      <a href={`tel:${site.phoneRaw}`} style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 10, color: "var(--paper)", font: "700 10px var(--font-space-mono),monospace", letterSpacing: ".12em", textTransform: "uppercase", textDecoration: "none" }}>
+                        Call now
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--lime)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+                      </a>
+                    </div>
+                  </div>
+                  <div className="contact-line">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <div>
+                      <span style={{ color: "#7d8780", font: "8px var(--font-space-mono),monospace", letterSpacing: ".12em", textTransform: "uppercase" }}>Timings</span>
+                      <p style={{ marginTop: 6, color: "var(--paper)", fontSize: 14 }}>
+                        {site.hours}
+                      </p>
+                      <p style={{ marginTop: 4, color: "var(--paper)", fontSize: 14 }}>
+                        Sunday: Closed
+                      </p>
+                    </div>
+                  </div>
+                  <div className="contact-line">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                    <div>
+                      <span style={{ color: "#7d8780", font: "8px var(--font-space-mono),monospace", letterSpacing: ".12em", textTransform: "uppercase" }}>Instagram</span>
+                      <p style={{ marginTop: 6, color: "var(--paper)", fontSize: 14 }}>
+                        {site.instagramHandle}
+                      </p>
+                      <a href={site.instagram} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 10, color: "var(--paper)", font: "700 10px var(--font-space-mono),monospace", letterSpacing: ".12em", textTransform: "uppercase", textDecoration: "none" }}>
+                        Follow us
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--lime)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Right: Map */}
+            <Reveal variant="right" delay={100}>
+              <div className="map-card" style={{ aspectRatio: "4/3" }}>
+                <iframe
+                  src={site.mapsEmbed}
+                  title={`${site.name} location map`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, filter: "invert(90%) hue-rotate(180deg)" }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <div style={{ marginTop: 22 }}>
+                <WhatsAppButtonFrontend
+                  label="Get Directions on WhatsApp"
+                  message={`Hi ${site.name}, please send me directions to your gym at ${site.address}.`}
+                />
+              </div>
             </Reveal>
-          ))}
+          </div>
         </div>
       </section>
 
-      {/* MAP + BMI */}
-      <section className="border-y border-white/10 bg-[#0c0c0c]">
-        <div className="section mx-auto grid max-w-7xl gap-10 lg:grid-cols-2">
-          <Reveal variant="left">
-            <div>
-            <h2 className="font-anton text-3xl uppercase leading-none text-white">
-              Location <span className="glow-lime">Map</span>
-            </h2>
-            <p className="mt-3 text-sm text-white/55">
-              Sheela Garden, Alamnagar, Rajajipuram — easy to reach, parking
-              friendly.
-            </p>
-            <div className="hero-frame mt-6">
-              <iframe
-                src={site.mapsEmbed}
-                title="ONE STOP FITNESS location map"
-                width="100%"
-                height="340"
-                style={{ border: 0, filter: "invert(90%) hue-rotate(180deg)" }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
-            <div className="mt-6">
-              <WhatsAppButtonFrontend
-                label="Get Directions on WhatsApp"
-                message={`Hi ${site.name}, please send me directions to your gym at ${site.address}.`}
-              />
-            </div>
+      {/* BMI */}
+      <section className="section-alt section-pad">
+        <div className="container-wide">
+          <div className="split-panel">
+            <Reveal variant="left">
+              <div>
+                <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  Quick check
+                </div>
+                <h2 className="section-title" style={{ marginTop: 18 }}>
+                  Know your<br />
+                  <span style={{ color: "var(--lime)" }}>start.</span>
+                </h2>
+                <p className="section-copy" style={{ marginTop: 22 }}>
+                  Two numbers, a quick answer — then we help you plan the way forward.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal variant="right" delay={120}>
+              <BMICalculatorFrontend />
+            </Reveal>
           </div>
-          </Reveal>
-
-          <Reveal variant="right" delay={120}>
-            <BMICalculatorFrontend />
-          </Reveal>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="section mx-auto max-w-7xl text-center">
-        <Reveal>
-          <h2 className="font-anton uppercase leading-[0.9] text-white sm:text-5xl text-4xl">
-            Have a <span className="glow-lime">Question?</span>
-          </h2>
-          <p className="mt-4 text-white/60">Message us and we&apos;ll get back to you right away.</p>
-          <div className="mt-8">
-            <WhatsAppButtonFrontend label="Chat on WhatsApp" />
-          </div>
-        </Reveal>
+      <section className="section-pad" style={{ textAlign: "center" }}>
+        <div className="container-wide">
+          <Reveal>
+            <h2 className="section-title">
+              Have a<br />
+              <span style={{ color: "var(--lime)" }}>question?</span>
+            </h2>
+            <p className="section-copy" style={{ marginTop: 22, marginLeft: "auto", marginRight: "auto" }}>
+              Message us and we&apos;ll get back to you right away.
+            </p>
+            <div style={{ marginTop: 34 }}>
+              <WhatsAppButtonFrontend label="Chat on WhatsApp" />
+            </div>
+          </Reveal>
+        </div>
       </section>
     </>
   );

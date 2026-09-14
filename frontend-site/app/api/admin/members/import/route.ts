@@ -56,6 +56,9 @@ const HEADER_ALIASES: Record<string, string> = {
   "parent phone": "parentPhone",
   "parent mobile": "parentPhone",
   "guardian phone": "parentPhone",
+  "emergency contact": "emergencyContact",
+  "emergency phone": "emergencyContact",
+  "emergency number": "emergencyContact",
 };
 
 function normalizeHeader(raw: unknown): string {
@@ -236,6 +239,7 @@ export async function POST(req: NextRequest) {
       const address = col(row, "address") || null;
       const parentName = col(row, "parentName") || null;
       const parentPhone = col(row, "parentPhone") || null;
+      const emergencyContact = col(row, "emergencyContact") || null;
       const dob = parseDateCell(col(row, "dob"));
       const joined = parseDateCell(col(row, "joined"));
       const start = parseDateCell(col(row, "start"));
@@ -266,6 +270,7 @@ export async function POST(req: NextRequest) {
                     address,
                     parentName,
                     parentPhone,
+                    emergencyContact,
                     dateOfBirth: dob ?? undefined,
                     joiningDate: joined ?? undefined,
                   },
@@ -275,6 +280,7 @@ export async function POST(req: NextRequest) {
                     address: address ?? undefined,
                     parentName: parentName ?? undefined,
                     parentPhone: parentPhone ?? undefined,
+                    emergencyContact: emergencyContact ?? undefined,
                     dateOfBirth: dob ?? undefined,
                     joiningDate: joined ?? undefined,
                   },
@@ -301,6 +307,7 @@ export async function POST(req: NextRequest) {
                   address,
                   parentName,
                   parentPhone,
+                  emergencyContact,
                   dateOfBirth: dob ?? undefined,
                   joiningDate: joined ?? undefined,
                 },

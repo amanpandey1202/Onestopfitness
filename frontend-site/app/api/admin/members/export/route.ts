@@ -1,19 +1,33 @@
+import { NextRequest, NextResponse } from "next/server";
+import { site } from "@/data/site";
 import { Role } from "@prisma/client";
 import ExcelJS from "exceljs";
 import { requireAdmin } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { fail } from "@/lib/api";
+import { decryptField } from "@/lib/crypto";
 
 /**
  * Exports all members to a real .xlsx file.
  *
- * SECURITY: only basic contact/membership fields are exported.
- * Sensitive fields (alternate phone, Aadhaar, address, parent info)
- * are stored in the app but NEVER included here.
+ * Admin-only endpoint (goes through requireAdmin). Includes sensitive profile
+ * fields (Aadhaar, address, parent/emergency contacts) DECRYPTED from at-rest
+ * ciphertext, so the file can be used for backup / import round-trips. Treat
+ * the downloaded file like the Aadhaar card itself.
+ *
+ * Requires ?confirm=1 so the full-PII download is an explicit deliberate action.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await requireAdmin();
+
+    const url = new URL(req.url);
+    if (url.searchParams.get("confirm") !== "1") {
+      return NextResponse.json(
+        { error: "This download contains full Aadhaar numbers, addresses and contacts. Re-request with ?confirm=1 to download." },
+        { status: 400 }
+      );
+    }
 
     const members = await prisma.user.findMany({
       where: { role: Role.MEMBER },
@@ -29,7 +43,7 @@ export async function GET() {
     });
 
     const wb = new ExcelJS.Workbook();
-    wb.creator = "ONE STOP FITNESS";
+    wb.creator = site.name;
     wb.created = new Date();
 
     const ws = wb.addWorksheet("Members");
@@ -39,6 +53,12 @@ export async function GET() {
       { header: "Name", key: "name", width: 24 },
       { header: "Email", key: "email", width: 30 },
       { header: "Phone", key: "phone", width: 16 },
+      { header: "Alternate Phone", key: "altPhone", width: 16 },
+      { header: "Aadhaar", key: "aadhaar", width: 20 },
+      { header: "Address", key: "address", width: 30 },
+      { header: "Parent Name", key: "parentName", width: 20 },
+      { header: "Parent Phone", key: "parentPhone", width: 16 },
+      { header: "Emergency Contact", key: "emergencyContact", width: 16 },
       { header: "Date Joined", key: "joined", width: 14 },
       { header: "Membership Type", key: "plan", width: 22 },
       { header: "Membership Start", key: "start", width: 16 },
@@ -71,6 +91,12 @@ export async function GET() {
         name: m.name,
         email: m.email,
         phone: m.phone ?? "",
+        altPhone: m.memberProfile?.alternatePhone ?? "",
+        aadhaar: decryptField(m.memberProfile?.aadhaarNumber) ?? "",
+        address: m.memberProfile?.address ?? "",
+        parentName: m.memberProfile?.parentName ?? "",
+        parentPhone: m.memberProfile?.parentPhone ?? "",
+        emergencyContact: m.memberProfile?.emergencyContact ?? "",
         joined: m.memberProfile?.joiningDate
           ? new Date(m.memberProfile.joiningDate).toLocaleDateString("en-IN")
           : "",
@@ -81,7 +107,7 @@ export async function GET() {
       });
     }
 
-    ws.autoFilter = { from: "A1", to: "I1" };
+    ws.autoFilter = { from: "A1", to: "O1" };
 
     const buf = await wb.xlsx.writeBuffer();
 

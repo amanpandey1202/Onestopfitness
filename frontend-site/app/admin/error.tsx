@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import Link from "next/link";
 
 export default function AdminError({
@@ -8,6 +9,9 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gym-black px-4 text-center text-white">
       <h1 className="mt-6 font-anton text-3xl uppercase text-gym-lime">Something went wrong</h1>

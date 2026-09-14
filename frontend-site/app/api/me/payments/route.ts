@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { site, brandParts } from "@/data/site";
 import { requireMember } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { fail } from "@/lib/api";
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Receipt — ONE STOP FITNESS</title>
+  <title>Receipt — ${esc(site.name)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #111; padding: 40px 20px; max-width: 520px; margin: 0 auto; }
@@ -72,8 +73,8 @@ export async function GET(req: NextRequest) {
   </style>
 </head>
 <body>
-  <div class="logo">ONE STOP <span>FITNESS</span></div>
-  <p style="font-size:12px;color:#999;margin-top:4px">Rajajipuram, Lucknow · onestopfit.in</p>
+  <div class="logo">${esc(brandParts().word1)} <span>${esc(brandParts().word2)}</span></div>
+  <p style="font-size:12px;color:#999;margin-top:4px">${esc(site.addressShort)} · ${esc(site.domain)}</p>
 
   <div class="receipt-title">Membership Receipt</div>
   <h1>Thank you, ${esc(payment.member.name.split(" ")[0])}!</h1>
@@ -99,7 +100,7 @@ export async function GET(req: NextRequest) {
 
   <div class="footer">
     <p>This is a computer-generated receipt. No signature required.</p>
-    <p style="margin-top:8px">Questions? WhatsApp: +91-92369-58881</p>
+    <p style="margin-top:8px">Questions? WhatsApp: ${esc(site.phoneDisplay)}</p>
   </div>
 
   <div style="margin-top:24px;text-align:center">

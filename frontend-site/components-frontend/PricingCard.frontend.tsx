@@ -1,12 +1,15 @@
 import WhatsAppButtonFrontend from "./WhatsAppButton.frontend";
 import Icon from "./Icons.frontend";
 import PayNowButton from "@/components/PayNowButton";
+import { planPeriodLabel } from "@/lib/format";
+import { site } from "@/data/site";
 
 export type PlanCardFrontend = {
   id: string;
   name: string;
   description: string | null;
   price: number;
+  durationDays?: number | null;
   features: string[];
 };
 
@@ -23,7 +26,7 @@ export default function PricingCardFrontend({
   featured?: boolean;
   tag?: string;
 }) {
-  const message = `Hi ONE STOP FITNESS, I'm interested in the ${plan.name} plan (₹${plan.price}/month). Please share the details.`;
+  const message = site.messages.planInquiry(plan.name, plan.price, planPeriodLabel(plan.durationDays));
 
   return (
     <div
@@ -48,7 +51,7 @@ export default function PricingCardFrontend({
         <span className="stat-num text-5xl">
           ₹{plan.price.toLocaleString("en-IN")}
         </span>
-        <span className="text-sm text-white/45">/ month</span>
+        <span className="text-sm text-white/45">/ {planPeriodLabel(plan.durationDays)}</span>
       </div>
 
       <ul className="mt-6 space-y-2.5 text-sm text-white/75">

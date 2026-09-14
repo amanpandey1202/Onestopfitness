@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { whatsappLink } from "@/data/site";
-import Icon from "./Icons.frontend";
+import { whatsappLink, site } from "@/data/site";
 
 /**
- * No backend — testimonials go straight to the gym's WhatsApp as a
- * pre-filled message.
+ * Review form — sends the message straight to WhatsApp. Restyled to
+ * the frontend.css design language (form-card / form-field / button-primary).
  */
 export default function TestimonialFormFrontend() {
   const [name, setName] = useState("");
@@ -15,65 +14,50 @@ export default function TestimonialFormFrontend() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const text = `Hi ONE STOP FITNESS! I'd like to share my experience:\n\n"${message}"\n\n— ${name || "A member"}`;
+    const text = site.messages.testimonial(message, name);
     window.open(whatsappLink(text), "_blank", "noopener,noreferrer");
     setSent(true);
   }
 
-  const inputCls =
-    "w-full rounded-md border border-white/12 bg-[#0a0a0a] px-4 py-3 text-white outline-none transition focus:border-gym-lime focus:shadow-[0_0_0_1px_rgba(154,217,1,0.3),0_0_18px_rgba(154,217,1,0.12)]";
-
   return (
-    <div className="panel p-7">
-      <h3 className="font-anton text-2xl uppercase leading-none text-white">
-        Share Your <span className="glow-lime">Experience</span>
-      </h3>
-      <p className="mt-2 text-sm text-white/55">
-        Been training with us? Your story could inspire the next member.
+    <div className="form-card">
+      <h3>Share your experience<span style={{ color: "var(--lime)" }}>.</span></h3>
+      <p className="form-sub">
+        Been training with us? Your words help the next member take the first step.
       </p>
 
       {sent ? (
-        <div className="mt-6 rounded-xl border border-gym-lime/35 bg-gym-lime/10 p-6 text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gym-lime text-[#101010] shadow-[0_0_22px_rgba(154,217,1,0.5)]">
-            <Icon name="check" className="h-6 w-6" />
-          </span>
-          <p className="mt-4 text-sm font-bold uppercase tracking-[0.15em] text-gym-lime">
-            Thank you!
-          </p>
-          <p className="mt-1.5 text-sm text-white/70">
-            WhatsApp should have opened with your message. Just press send!
-          </p>
+        <div className="form-success" style={{ textAlign: "center" }}>
+          <div style={{ display: "grid", placeItems: "center", margin: "0 auto", width: 46, height: 46, border: "1.5px solid var(--lime)", background: "rgba(200,255,40,.08)", color: "var(--lime)" }}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          </div>
+          <strong style={{ marginTop: 16 }}>Thank you.</strong>
+          <p>WhatsApp should have opened with your message. Just press send.</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="ftname" className="mb-1.5 block text-sm font-medium text-white/75">
-              Your Name
-            </label>
+        <form onSubmit={handleSubmit} className="form-grid">
+          <div className="form-field">
+            <label htmlFor="ftname">Your name</label>
             <input
               id="ftname"
               type="text"
               placeholder="e.g. Rahul"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className={inputCls}
             />
           </div>
-          <div>
-            <label htmlFor="ftmsg" className="mb-1.5 block text-sm font-medium text-white/75">
-              Your Experience
-            </label>
+          <div className="form-field">
+            <label htmlFor="ftmsg">Your experience</label>
             <textarea
               id="ftmsg"
               rows={4}
               placeholder="Tell us about your journey..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className={inputCls}
             />
           </div>
-          <button type="submit" className="btn btn-whatsapp w-full">
-            <Icon name="whatsapp" className="h-[1.1rem] w-[1.1rem]" />
+          <button type="submit" className="button-primary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
             Send via WhatsApp
           </button>
         </form>

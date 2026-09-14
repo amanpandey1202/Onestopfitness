@@ -3,8 +3,10 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { site, brandParts } from "@/data/site";
 import { Badge, Button, Card, Spinner } from "@/components/admin/ui";
 import { formatDate } from "@/lib/format";
+import { applyOfferDiscount } from "@/lib/discount";
 
 type Plan = {
   id: string;
@@ -156,7 +158,7 @@ export default function MemberPayPage({
         amount: orderData.amount,
         currency: orderData.currency,
         order_id: orderData.orderId,
-        name: "ONE STOP FITNESS",
+        name: site.name,
         description: `Plan: ${orderData.plan.name}`,
         prefill: orderData.prefill,
         theme: { color: "#9AD901" },
@@ -225,18 +227,7 @@ export default function MemberPayPage({
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
   const basePrice = selectedPlan ? selectedPlan.price : 0;
-  let finalPrice = basePrice;
-  let discountAmount = 0;
-
-  if (selectedPlan && selectedOffer) {
-    if (selectedOffer.discountType === "PERCENT" && selectedOffer.discountValue) {
-      discountAmount = Math.round((basePrice * selectedOffer.discountValue) / 100);
-      finalPrice = Math.max(1, basePrice - discountAmount);
-    } else if (selectedOffer.discountType === "AMOUNT" && selectedOffer.discountValue) {
-      discountAmount = selectedOffer.discountValue;
-      finalPrice = Math.max(1, basePrice - discountAmount);
-    }
-  }
+  const { finalPrice, discountAmount } = applyOfferDiscount(basePrice, selectedOffer);
 
   return (
     <div className="min-h-screen bg-gym-black text-white px-4 py-8 md:py-16">
@@ -245,7 +236,7 @@ export default function MemberPayPage({
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="font-anton text-2xl uppercase tracking-wider text-white hover:text-gym-lime transition">
-            ONE STOP <span className="text-gym-lime">FITNESS</span>
+            {brandParts().word1} <span className="text-gym-lime">{brandParts().word2}</span>
           </Link>
           <h1 className="mt-4 font-display text-2xl md:text-3xl font-bold uppercase tracking-wide">
             Member Checkout

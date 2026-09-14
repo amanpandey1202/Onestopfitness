@@ -24,6 +24,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         discountValue: data.discountValue,
         discountType: data.discountType,
         imageUrl: data.imageUrl,
+        planId: data.planId,
         startDate: data.startDate,
         endDate: data.endDate,
         isActive: data.isActive,
@@ -50,7 +51,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     if (!offer) return NextResponse.json({ error: "Offer not found" }, { status: 404 });
 
     await prisma.offer.delete({ where: { id } });
-    await deleteStoredImage(offer.imageUrl);
+    await deleteStoredImage(offer.imageUrl).catch(() => {});
     await logAudit(admin.id, "DELETE_OFFER", "Offer", id, { title: offer.title });
     return ok({ success: true });
   } catch (error) {

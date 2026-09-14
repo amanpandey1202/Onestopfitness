@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { ok } from "@/lib/api";
 import { rateLimit, reset, clientIp } from "@/lib/rate-limit";
 import { nextMemberCode } from "@/lib/memberCode";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendVerificationEmail, sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       const token = generateToken();
       await setVerifyToken(user.id, token);
       await sendVerificationEmail(email, token);
+      await sendWelcomeEmail(email, user.name, user.memberCode);
     } catch (e) {
       console.error("[api] register verification email", e);
     }

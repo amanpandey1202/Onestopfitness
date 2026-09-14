@@ -4,27 +4,8 @@ import { requireAdmin } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { fail, ok, created } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
-
-const mealSchema = z.object({
-  mealName: z.string().min(1),
-  timing: z.string().optional().nullable(),
-  items: z.string().min(1), // JSON array of items
-  calories: z.number().int().min(0).optional().nullable(),
-  orderIndex: z.number().int().default(0),
-});
-
-const dietPlanSchema = z.object({
-  memberId: z.string().min(1),
-  trainerId: z.string().optional().nullable(),
-  title: z.string().min(2).max(120),
-  description: z.string().optional().nullable(),
-  goal: z.string().optional().nullable(),
-  calorieTarget: z.number().int().min(0).optional().nullable(),
-  proteinGm: z.number().int().min(0).optional().nullable(),
-  carbsGm: z.number().int().min(0).optional().nullable(),
-  fatGm: z.number().int().min(0).optional().nullable(),
-  meals: z.array(mealSchema).default([]),
-});
+import { dietPlanSchema } from "@/lib/dietSchemas";
+import { requireActiveTrainerId, requireValidMemberId } from "@/lib/dietPatch";
 
 export async function GET(req: NextRequest) {
   try {
@@ -32,7 +13,11 @@ export async function GET(req: NextRequest) {
     const memberId = new URL(req.url).searchParams.get("memberId");
     const plans = await prisma.dietPlan.findMany({
       where: memberId ? { memberId } : undefined,
-      include: { meals: { orderBy: { orderIndex: "asc" } }, member: { select: { name: true } } },
+      include: {
+        meals: { orderBy: { orderIndex: "asc" } },
+        member: { select: { id: true, name: true, memberCode: true } },
+        trainer: { select: { id: true, name: true } },
+      },
       orderBy: { createdAt: "desc" },
     });
     return ok({ plans });
@@ -45,34 +30,68 @@ export async function POST(req: NextRequest) {
   try {
     const admin = await requireAdmin();
     const body = await req.json();
-    const data = dietPlanSchema.parse(body);
+    const data = dietPlanSchema
+      .extend({
+        memberId: z.string().min(1).optional(),
+        memberIds: z.array(z.string().min(1)).optional(),
+      })
+      .superRefine((v, ctx) => {
+        const ids = v.memberIds ?? (v.memberId ? [v.memberId] : []);
+        if (ids.length === 0) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Select at least one member." });
+        }
+      })
+      .parse(body);
 
-    const plan = await prisma.dietPlan.create({
-      data: {
-        memberId: data.memberId,
-        trainerId: data.trainerId ?? null,
-        title: data.title,
-        description: data.description ?? null,
-        goal: data.goal ?? null,
-        calorieTarget: data.calorieTarget ?? null,
-        proteinGm: data.proteinGm ?? null,
-        carbsGm: data.carbsGm ?? null,
-        fatGm: data.fatGm ?? null,
-        meals: {
-          create: data.meals.map((m, i) => ({
-            mealName: m.mealName,
-            timing: m.timing ?? null,
-            items: m.items,
-            calories: m.calories ?? null,
-            orderIndex: m.orderIndex ?? i,
-          })),
-        },
-      },
-      include: { meals: { orderBy: { orderIndex: "asc" } } },
-    });
+    const memberIds = data.memberIds ?? (data.memberId ? [data.memberId] : []);
+    const uniqueIds = [...new Set(memberIds)];
 
-    await logAudit(admin.id, "CREATE_DIET_PLAN", "DietPlan", plan.id, { memberId: data.memberId });
-    return created({ plan });
+    // Every id must point at a real MEMBER account.
+    for (const id of uniqueIds) {
+      await requireValidMemberId(id);
+    }
+
+    // Only allow assignment when a real, active trainer id is supplied.
+    const trainerId = await requireActiveTrainerId(data.trainerId);
+
+    const meals = data.meals.map((m, i) => ({
+      mealName: m.mealName,
+      timing: m.timing ?? null,
+      items: m.items,
+      calories: m.calories ?? null,
+      dayOfWeek: m.dayOfWeek ?? null,
+      orderIndex: m.orderIndex ?? i,
+    }));
+
+    const plans = await prisma.$transaction(
+      uniqueIds.map((memberId) =>
+        prisma.dietPlan.create({
+          data: {
+            memberId,
+            trainerId,
+            title: data.title,
+            description: data.description ?? null,
+            goal: data.goal ?? null,
+            calorieTarget: data.calorieTarget ?? null,
+            proteinGm: data.proteinGm ?? null,
+            carbsGm: data.carbsGm ?? null,
+            fatGm: data.fatGm ?? null,
+            meals: { create: meals },
+          },
+          include: { meals: { orderBy: { orderIndex: "asc" } } },
+        })
+      )
+    );
+
+    await Promise.all(
+      plans.map((plan) =>
+        logAudit(admin.id, "CREATE_DIET_PLAN", "DietPlan", plan.id, {
+          memberId: plan.memberId,
+          bulk: uniqueIds.length,
+        })
+      )
+    );
+    return created({ plan: plans.map((p) => p) });
   } catch (e) {
     return fail(e);
   }

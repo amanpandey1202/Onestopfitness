@@ -1,14 +1,14 @@
 import { PrismaClient, Role, MembershipStatus, CompetitionStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
-
+import { site } from "../data/site";
 const prisma = new PrismaClient();
 
 const DEMO_PASSWORD = "Demo@12345";
 
 async function main() {
-  const adminName = process.env.SEED_ADMIN_NAME || "Deepak";
-  const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@onestopfit.in";
+  const adminName = process.env.SEED_ADMIN_NAME || site.ownerName;
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || `admin@${site.domain}`;
   const adminPassword = process.env.SEED_ADMIN_PASSWORD || "Admin@12345";
 
   const WEAK_ADMIN_PASSWORDS = ["Admin@12345", "Admin12345", "Password@123", "Demo@12345", "password", "admin"];
@@ -33,78 +33,79 @@ async function main() {
       id: "user-admin",
       name: adminName,
       email: adminEmail,
-      memberCode: "OSF001",
+      memberCode: `${site.memberCodePrefix}001`,
       qrToken: "qr_token_admin_seed",
       passwordHash: await bcrypt.hash(adminPassword, 10),
       role: Role.ADMIN,
-      phone: "092369 58881",
+      phone: site.phoneRaw,
       trainerProfile: {
         create: {
           id: "tp-admin",
-          specialization: "Founder & Head Trainer",
-          bio: "Mr. Lucknow 2014 · Mr. UP 2025 · multiple fitness titles. The vision behind ONE STOP FITNESS.",
+          specialization: site.ownerTitle,
+          bio: `${site.ownerAchievements} · The vision behind ${site.name}.`,
           experience: 20,
           profileImageUrl: "/images/founder.svg",
-          instagram: "@deepakindia",
+          instagram: site.ownerInstagram,
           isFounder: true,
-          founderNote:
-            "A fitness champion turned coach, I built ONE STOP FITNESS so Lucknow could train with purpose. Every title I won, I won on floors just like this one — now it's your turn.",
-          founderTitles: JSON.stringify([
-            "MR LUCKNOW 2014",
-            "MR UP 2025",
-            "FIT FACTOR 2016",
-            "JERAI FITNESS MODEL 2016",
-            "MR REGION 2016",
-          ]),
+          founderNote: site.ownerFallbackBio,
+          founderTitles: JSON.stringify(site.ownerAchievements.split(" · ")),
         },
       },
     },
   });
 
-  const aamir = await prisma.user.upsert({
-    where: { email: "aamir@onestopfit.in" },
-    update: { name: "Aamir Rizvi" },
-    create: {
-      id: "user-aamir",
-      name: "Aamir Rizvi",
-      email: "aamir@onestopfit.in",
-      memberCode: "OSF002",
-      qrToken: "qr_token_aamir_seed",
-      passwordHash: await bcrypt.hash(DEMO_PASSWORD, 10),
-      role: Role.TRAINER,
-      trainerProfile: {
-        create: {
-          id: "tp-aamir",
-          specialization: "Strength & Conditioning",
-          bio: "Dedicated coach helping members build strength and confidence with every single session.",
-          experience: 6,
-          profileImageUrl: "/images/trainer-1.svg",
-        },
-      },
-    },
-  });
+  // Demo trainers and a demo member use a hardcoded weak password. In production
+  // these accounts should not exist; require SEED_DEMO_ACCOUNTS=1 to opt in.
+  const skipDemo = process.env.NODE_ENV === "production" && !process.env.SEED_DEMO_ACCOUNTS;
 
-  const member = await prisma.user.upsert({
-    where: { email: "member@onestopfit.in" },
-    update: { name: "Demo Member" },
-    create: {
-      id: "user-member",
-      name: "Demo Member",
-      email: "member@onestopfit.in",
-      memberCode: "OSF003",
-      qrToken: "qr_token_member_demo",
-      passwordHash: await bcrypt.hash(DEMO_PASSWORD, 10),
-      role: Role.MEMBER,
-      memberProfile: {
+  const aamir = skipDemo
+    ? null
+    : await prisma.user.upsert({
+        where: { email: `aamir@${site.domain}` },
+        update: { name: "Aamir Rizvi" },
         create: {
-          id: "mp-demo",
-          fitnessGoal: "Fat loss & strength",
-          joiningDate: new Date("2026-06-01"),
-          notes: "Seed demo member — log in to see the member dashboard.",
+          id: "user-aamir",
+          name: "Aamir Rizvi",
+          email: `aamir@${site.domain}`,
+          memberCode: `${site.memberCodePrefix}002`,
+          qrToken: "qr_token_aamir_seed",
+          passwordHash: await bcrypt.hash(DEMO_PASSWORD, 10),
+          role: Role.TRAINER,
+          trainerProfile: {
+            create: {
+              id: "tp-aamir",
+              specialization: "Strength & Conditioning",
+              bio: "Dedicated coach helping members build strength and confidence with every single session.",
+              experience: 6,
+              profileImageUrl: "/images/trainer-1.svg",
+            },
+          },
         },
-      },
-    },
-  });
+      });
+
+  const member = skipDemo
+    ? null
+    : await prisma.user.upsert({
+        where: { email: `member@${site.domain}` },
+        update: { name: "Demo Member" },
+        create: {
+          id: "user-member",
+          name: "Demo Member",
+          email: `member@${site.domain}`,
+          memberCode: `${site.memberCodePrefix}003`,
+          qrToken: "qr_token_member_demo",
+          passwordHash: await bcrypt.hash(DEMO_PASSWORD, 10),
+          role: Role.MEMBER,
+          memberProfile: {
+            create: {
+              id: "mp-demo",
+              fitnessGoal: "Fat loss & strength",
+              joiningDate: new Date("2026-06-01"),
+              notes: "Seed demo member — log in to see the member dashboard.",
+            },
+          },
+        },
+      });
 
   // -------------------------------------------------------------------------
   // Membership plans
@@ -146,18 +147,21 @@ async function main() {
   }
 
   // Active membership for the demo member
-  await prisma.membership.upsert({
-    where: { id: "mem-demo" },
-    update: {},
-    create: {
-      id: "mem-demo",
-      memberId: member.id,
-      planId: "plan-combo",
-      startDate: new Date("2026-08-01"),
-      endDate: new Date("2026-09-01"),
-      status: MembershipStatus.ACTIVE,
-    },
-  });
+  if (skipDemo || !member || !aamir) {
+    console.log("Skipping demo membership/measurements/diet seeding in production.");
+  } else {
+    await prisma.membership.upsert({
+      where: { id: "mem-demo" },
+      update: {},
+      create: {
+        id: "mem-demo",
+        memberId: member.id,
+        planId: "plan-combo",
+        startDate: new Date("2026-08-01"),
+        endDate: new Date("2026-09-01"),
+        status: MembershipStatus.ACTIVE,
+      },
+    });
 
   // -------------------------------------------------------------------------
   // Sample Body Measurements
@@ -208,6 +212,7 @@ async function main() {
       },
     },
   });
+  }
 
   // -------------------------------------------------------------------------
   // Sample Class Timetable
@@ -230,7 +235,7 @@ async function main() {
 
   console.log("✅ Seed complete with all features!");
   console.log("   Admin login :", adminEmail, "/", adminPassword);
-  console.log("   Member login: member@onestopfit.in /", DEMO_PASSWORD);
+  console.log("   Member login: member@${site.domain} /", DEMO_PASSWORD);
 }
 
 main()

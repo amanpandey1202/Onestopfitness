@@ -1,14 +1,12 @@
-import PageHeroFrontend from "@/components-frontend/PageHero.frontend";
-import SectionHeadingFrontend from "@/components-frontend/SectionHeading.frontend";
+import PageHeaderFrontend from "@/components-frontend/PageHeader.frontend";
 import GalleryGridFrontend from "@/components-frontend/GalleryGrid.frontend";
 import Icon from "@/components-frontend/Icons.frontend";
 import { site } from "@/data/site";
 import { getPublishedGallery } from "@/lib/services/public";
 
 export const metadata = {
-  title: "Gallery — ONE STOP FITNESS",
-  description:
-    "Photos of ONE STOP FITNESS in Lucknow — our facilities, classes and community.",
+  title: `Gallery — ${site.name}`,
+  description: site.seo.description,
 };
 
 export const dynamic = "force-dynamic";
@@ -18,34 +16,45 @@ export default async function FrontendGalleryPage() {
 
   return (
     <>
-      <PageHeroFrontend
+      <PageHeaderFrontend
         kicker="Gallery"
-        title="Inside ONE STOP FITNESS"
+        title="Inside"
+        highlight={`${site.name}.`}
         subtitle="Our facilities, classes and community — captured."
       />
 
-      <section className="section mx-auto max-w-7xl">
-        <GalleryGridFrontend items={gallery} />
+      {/* Gallery grid */}
+      <section className="section-pad">
+        <div className="container-wide">
+          <GalleryGridFrontend items={gallery} />
+        </div>
       </section>
 
       {/* Instagram */}
-      <section className="border-t border-white/10 bg-[#0c0c0c]">
-        <div className="section mx-auto max-w-7xl text-center">
-          <SectionHeadingFrontend
-            kicker="Daily updates"
-            title="Follow the Journey"
-            subtitle="New training videos, transformations and behind-the-scenes every week."
-          />
-          <a
-            href={site.instagram}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-outline mt-10"
-          >
-            <Icon name="instagram" className="h-[1.1rem] w-[1.1rem]" />
-            Follow us on Instagram · {site.instagramHandle}
-          </a>
-          <p className="mt-7 text-xs uppercase tracking-[0.2em] text-white/40">
+      <section className="section-alt section-pad" style={{ textAlign: "center" }}>
+        <div className="container-wide">
+          <div className="eyebrow" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+            Daily updates
+          </div>
+          <h2 className="section-title" style={{ marginTop: 18 }}>
+            Follow the<br />
+            <span style={{ color: "var(--lime)" }}>journey.</span>
+          </h2>
+          <p className="section-copy" style={{ marginTop: 22, marginLeft: "auto", marginRight: "auto" }}>
+            New training videos, transformations and behind-the-scenes every week.
+          </p>
+          <div style={{ marginTop: 34 }}>
+            <a
+              href={site.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button-outline"
+            >
+              <Icon name="instagram" className="h-[1.1rem] w-[1.1rem]" />
+              Follow us on Instagram · {site.instagramHandle}
+            </a>
+          </div>
+          <p style={{ marginTop: 28, color: "#5d6760", font: "9px var(--font-space-mono),monospace", letterSpacing: ".16em", textTransform: "uppercase" }}>
             We upload new photos regularly — check back often.
           </p>
         </div>

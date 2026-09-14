@@ -10,8 +10,9 @@ import { logAudit } from "@/lib/audit";
 import { syncMemberToAirtable } from "@/lib/airtable";
 import { nextMemberCode } from "@/lib/memberCode";
 import { computeMembershipEndDate } from "@/lib/format";
-import { encryptField, decryptField } from "@/lib/crypto";
+import { encryptField, maskAadhaar } from "@/lib/crypto";
 import { resumeExpiredFreezes } from "@/lib/membership";
+import { isMemberVerified } from "@/lib/memberVerification";
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
       where.memberships = { some: { status: "ACTIVE", endDate: { lt: now } } };
     }
     if (status === "absentee") {
-      where.isActive = true;
+      where.createdAt = { lte: new Date(Date.now() - 14 * 86_400_000) };
       where.attendance = { none: { checkIn: { gte: new Date(Date.now() - 14 * 86_400_000) } } };
     }
 
@@ -69,6 +70,11 @@ export async function GET(req: NextRequest) {
           select: { id: true },
           take: 1,
         },
+        attendance: {
+          orderBy: { checkIn: "desc" },
+          take: 1,
+          select: { checkIn: true },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -80,10 +86,12 @@ export async function GET(req: NextRequest) {
         ...member,
         // A "paid member" — never just a signup.
         category: member.memberships.length > 0 || payments.length > 0 ? "member" : "new",
+        // Whether the front desk has captured Aadhaar + address + a contact.
+        isVerified: isMemberVerified(member.memberProfile),
         memberProfile: member.memberProfile
           ? {
               ...member.memberProfile,
-              aadhaarNumber: decryptField(member.memberProfile.aadhaarNumber),
+              aadhaarNumber: maskAadhaar(member.memberProfile.aadhaarNumber),
             }
           : member.memberProfile,
       })),
@@ -132,6 +140,7 @@ export async function POST(req: NextRequest) {
                 address: data.address,
                 parentName: data.parentName,
                 parentPhone: data.parentPhone,
+                emergencyContact: data.emergencyContact,
               },
             },
           },

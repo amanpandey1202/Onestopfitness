@@ -44,7 +44,7 @@ export default function AdminBroadcastPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         title="Bulk WhatsApp Outreach"
         subtitle="Filter target members, generate personalized WhatsApp messages, and reach your members with 1 click."
@@ -53,10 +53,12 @@ export default function AdminBroadcastPage() {
       <Card className="p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/60">
-              1. Select Target Group
-            </label>
-            <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
+            <label className="fl">1. Select Target Group</label>
+            <Select
+              className="inp"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
               <option value="all_active">All Active Members</option>
               <option value="expiring_7">Expiring in Next 7 Days</option>
               <option value="expiring_14">Expiring in Next 14 Days</option>
@@ -67,10 +69,12 @@ export default function AdminBroadcastPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/60">
-              2. Message Type / Template
-            </label>
-            <Select value={template} onChange={(e) => setTemplate(e.target.value)}>
+            <label className="fl">2. Message Type / Template</label>
+            <Select
+              className="inp"
+              value={template}
+              onChange={(e) => setTemplate(e.target.value)}
+            >
               <option value="absentee">Absentee Motivation (&quot;We Miss You&quot;)</option>
               <option value="expiry-soon">Expiry Reminder (&quot;Renew Now&quot;)</option>
               <option value="expiry-crossed">Expired Notice (&quot;Come Back&quot;)</option>
@@ -81,10 +85,9 @@ export default function AdminBroadcastPage() {
 
         {template === "custom" && (
           <div className="mt-4">
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/60">
-              Custom Message
-            </label>
+            <label className="fl">Custom Message</label>
             <TextArea
+              className="inp"
               rows={3}
               placeholder="Hey! Gym will be closed on Sunday for festival maintenance..."
               value={customMsg}
@@ -104,50 +107,59 @@ export default function AdminBroadcastPage() {
       </Card>
 
       {results && (
-        <Card className="p-6">
-          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white mb-4">
-            Outreach List ({results.length})
-          </h2>
+        <>
+          <div className="stitle">
+            <div className="stl">
+              <span className="sta" />
+              <h2 className="stt">Outreach List ({results.length})</h2>
+            </div>
+          </div>
           {results.length === 0 ? (
-            <p className="text-sm text-white/50">No members match this filter criteria.</p>
+            <Card className="p-6">
+              <p className="tsm tmu">No members match this filter criteria.</p>
+            </Card>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+            <div className="tw">
+              <table>
                 <thead>
-                  <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-white/40">
-                    <th className="px-4 py-3">Member</th>
-                    <th className="px-4 py-3">Status / Plan</th>
-                    <th className="px-4 py-3">Message Preview</th>
-                    <th className="px-4 py-3">Action</th>
+                  <tr>
+                    <th>Member</th>
+                    <th>Status / Plan</th>
+                    <th>Message Preview</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {results.map((r) => (
-                    <tr key={r.memberId} className="border-b border-white/5 hover:bg-white/[0.02]">
-                      <td className="px-4 py-3">
-                        <p className="font-bold text-white">{r.name}</p>
-                        <p className="text-xs text-white/40">{r.phone || "No phone"}</p>
+                    <tr key={r.memberId}>
+                      <td>
+                        <p className="fw6">{r.name}</p>
+                        <p className="tft">{r.phone || "No phone"}</p>
                       </td>
-                      <td className="px-4 py-3 text-xs text-white/60">
-                        {r.planName ? <p className="font-medium text-white">{r.planName}</p> : <p className="text-red-300">No active plan</p>}
-                        {r.daysAbsent != null && <p>Absent {r.daysAbsent} days</p>}
-                        {r.daysUntilExpiry != null && <p>Ends in {r.daysUntilExpiry} days</p>}
+                      <td>
+                        {r.planName ? (
+                          <p className="fw6">{r.planName}</p>
+                        ) : (
+                          <p className="trd">No active plan</p>
+                        )}
+                        {r.daysAbsent != null && <p className="tft">Absent {r.daysAbsent} days</p>}
+                        {r.daysUntilExpiry != null && <p className="tft">Ends in {r.daysUntilExpiry} days</p>}
                       </td>
-                      <td className="px-4 py-3 text-xs text-white/70 max-w-sm truncate">
-                        {r.message}
+                      <td>
+                        <p className="tmu txs max-w-sm truncate">{r.message}</p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td>
                         {r.whatsappUrl ? (
                           <a
                             href={r.whatsappUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded bg-[#25d366] px-3 py-1.5 text-xs font-bold text-[#062b12] hover:bg-[#34df73] transition"
+                            className="wa"
                           >
                             Send WhatsApp
                           </a>
                         ) : (
-                          <span className="text-xs text-white/30">No Phone</span>
+                          <span className="tft txs">No Phone</span>
                         )}
                       </td>
                     </tr>
@@ -156,7 +168,7 @@ export default function AdminBroadcastPage() {
               </table>
             </div>
           )}
-        </Card>
+        </>
       )}
     </div>
   );
