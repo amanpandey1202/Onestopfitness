@@ -32,6 +32,10 @@ jobs:
       working-directory: ./frontend-site
       run: npm run build
 
+    - name: Ensure assets folder exists
+      working-directory: ./frontend-site
+      run: mkdir -p android/app/src/main/assets
+
     - name: Sync Capacitor to Android
       working-directory: ./frontend-site
       run: npx cap sync android
@@ -49,4 +53,3 @@ jobs:
       with:
         name: gym-app-debug.apk
         path: frontend-site/android/app/build/outputs/apk/debug/app-debug.apk
-
